@@ -71,7 +71,7 @@ def expectation_values(A_list, H_list):
 
     Rp = np.zeros([1, 1])
     Rp[0, 0] = 1.
-    
+
     E_list = []
     for i in range(L - 2, -1, -1):
         Rp = np.tensordot(A_list[i+1].conj(),Rp, axes=(2, 1))
@@ -85,20 +85,25 @@ def expectation_values(A_list, H_list):
     return E_list
 
 def apply_U(A_list, U_list, onset):
+    '''
+    There are two subset of gate.
+    onset indicate whether we are applying even (0, 2, 4, ...)
+    or odd (1, 3, 5, ...) gates
+    '''
     L = len(A_list)
-    
-    Ap_list = [[] for i in range(L)]
+
+    Ap_list = [None for i in range(L)]
     if onset == 1:
         Ap_list[0] = A_list[0]
         Ap_list[L-1] = A_list[L-1]
-         
+
     for i in range(onset,L-1,2):
         d1,chi1,chi2 = A_list[i].shape
         d2,chi2,chi3 = A_list[i+1].shape
-        
+
         theta = np.tensordot(A_list[i],A_list[i+1],axes=(2,1))
         theta = np.tensordot(U_list[i],theta,axes=([0,1],[0,2]))
-        theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1,d2*chi3))
+        theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
         X, Y, Z = np.linalg.svd(theta,full_matrices=0)
         chi2 = np.sum(Y>10.**(-10))
@@ -107,14 +112,14 @@ def apply_U(A_list, U_list, onset):
         piv[(np.argsort(Y)[::-1])[:chi2]] = True
 
         Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-        X = X[:,piv] 
+        X = X[:,piv]
         Z = Z[piv,:]
 
-        X=np.reshape(X,(d1,chi1,chi2))
-        Ap_list[i]   = X.reshape([d1,chi1,chi2])
-        Ap_list[i+1] = np.dot(np.diag(Y),Z).reshape([chi2,d2,chi3]).transpose([1,0,2])
+        X=np.reshape(X, (d1, chi1, chi2))
+        Ap_list[i]   = X.reshape([d1, chi1, chi2])
+        Ap_list[i+1] = np.dot(np.diag(Y), Z).reshape([chi2, d2, chi3]).transpose([1, 0, 2])
 
-    return(Ap_list) 
+    return(Ap_list)
 
 def var_A(A_list, Ap_list):
     L = len(A_list)
@@ -129,7 +134,7 @@ def var_A(A_list, Ap_list):
 
     Rp = np.zeros([1, 1])
     Rp[0, 0] = 1.
-    
+
     A_list_new = [[] for i in range(L)]
     for i in range(L - 1, -1, -1):
         Rp = np.tensordot(Ap_list[i].conj(),Rp, axes=(2, 1))
@@ -139,16 +144,16 @@ def var_A(A_list, Ap_list):
         Rp = np.tensordot(A_list_new[i], Rp, axes=([0,2], [0,2]))
 
     return A_list_new
-    
+
 if __name__ == "__main__":
-    np.random.seed(1)  
+    np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
     L = 10
     chi = 4
     J = 1.
     g = 1.5
     N_iter = 1
-    
+
     A_list  =  init_mps(L,chi,2)
     H_list  =  get_H_TFI(L, J, g)
     E_exact =  ed.get_E_Ising_exact(g,J,L)
@@ -159,15 +164,15 @@ if __name__ == "__main__":
         for i in range(int(20//dt**(0.75))):
             Ap_list = apply_U(A_list,  U_list, 0)
             Ap_list = apply_U(Ap_list, U_list, 1)
-            
+
             for a in range(N_iter):
                 A_list  = var_A(A_list, Ap_list)
-            
+
             delta_list.append(np.sum(expectation_values(A_list, H_list))-E_exact.item())
             t_list.append(t_list[-1]+dt)
-            
+
             print(t_list[-1],delta_list[-1])
-    
+
     pl.close()
     pl.semilogy(t_list,delta_list,'.')
     pl.title('$\\chi=$'+str(chi) + ', $L=$' + str(L))
