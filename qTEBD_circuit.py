@@ -191,8 +191,8 @@ def var_gate(new_mps, gate, site, mps_cache):
 
     # new_gate = polar(M)
     U, _, Vd = np.linalg.svd(M, full_matrices=False)
-    new_gate = np.dot(U, Vd)
-    # new_gate = np.dot(Vd.T.conjugate(), U.T.conjugate())
+    # new_gate = np.dot(U, Vd)
+    new_gate = np.dot(Vd.T.conjugate(), U.T.conjugate())
     new_gate = new_gate.reshape([2, 2, 2, 2])
 
     return new_gate
@@ -215,7 +215,7 @@ def apply_gate(A_list, gate, idx):
     piv[(np.argsort(Y)[::-1])[:chi2]] = True
 
     Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-    Y = Y / invsq
+    # Y = Y / invsq
     X = X[:,piv]
     Z = Z[piv,:]
 
@@ -287,7 +287,7 @@ def apply_U_all(A_list, U_list, cache=False):
         piv[(np.argsort(Y)[::-1])[:chi2]] = True
 
         Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-        Y = Y / invsq
+        # Y = Y / invsq
         X = X[:,piv]
         Z = Z[piv,:]
 
@@ -332,7 +332,6 @@ def apply_U(A_list, U_list, onset):
         piv[(np.argsort(Y)[::-1])[:chi2]] = True
 
         Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-        Y = Y / invsq
         X = X[:,piv]
         Z = Z[piv,:]
 
@@ -383,12 +382,12 @@ def var_A(A_list, Ap_list):
 if __name__ == "__main__":
     np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
-    L = 10
+    L = 4
     chi = 4
     J = 1.
     g = 1.5
-    N_iter = 5
-    depth = 2
+    N_iter = 10
+    depth = 1
 
     SH_circuit = []
 
@@ -402,31 +401,38 @@ if __name__ == "__main__":
         random_layer = [random_2site_U(2) for i in range(L-1)]
         SH_circuit.append(random_layer)
         current_depth = dep_idx + 1
-        for dt in [0.05,0.01]:  # ,0.001]:
-            U_list =  make_U(H_list, dt)
-            for i in range(int(2//dt**(0.75))):
-                for iter_idx in range(N_iter):
-                    mps_of_layer = circuit_2_mps(SH_circuit)
-                    new_mps = apply_U(mps_of_layer[current_depth],  U_list, 0)
-                    new_mps = apply_U(new_mps, U_list, 1)
 
-                    for var_dep_idx in range(current_depth, 0, -1):
-                        # circuit is modified inplace
-                        # new mps is returned
-                        new_mps, new_layer = var_layer(new_mps,
-                                                       SH_circuit[var_dep_idx - 1],
-                                                       mps_of_layer[var_dep_idx - 1],
-                                                      )
-                        assert(len(new_layer) == L -1)
-                        SH_circuit[var_dep_idx - 1] = new_layer
+    for dt in [0.05,0.01]: # ,0.001]:
+        U_list =  make_U(H_list, dt)
+        for i in range(int(20//dt**(0.75))):
+            mps_of_layer = circuit_2_mps(SH_circuit)
+            new_mps = apply_U(mps_of_layer[current_depth],  U_list, 0)
+            new_mps = apply_U(new_mps, U_list, 1)
+            # new_mps is the e(-H)|psi0> which is not normalizaed.
 
-                # [Todo] log the fedility here
+            for iter_idx in range(N_iter):
+                iter_mps = [A.copy() for A in new_mps]
+                for var_dep_idx in range(current_depth, 0, -1):
+                    # circuit is modified inplace
+                    # new mps is returned
+                    iter_mps, new_layer = var_layer(iter_mps,
+                                                   SH_circuit[var_dep_idx - 1],
+                                                   mps_of_layer[var_dep_idx - 1],
+                                                  )
+                    assert(len(new_layer) == L -1)
+                    SH_circuit[var_dep_idx - 1] = new_layer
+
                 mps_of_layer = circuit_2_mps(SH_circuit)
-                A_list = mps_of_layer[current_depth]
-                delta_list.append(np.sum(expectation_values(A_list, H_list))-E_exact.item())
-                t_list.append(t_list[-1]+dt)
 
-                print(t_list[-1],delta_list[-1])
+            # [Todo] log the fedility here
+            mps_of_layer = circuit_2_mps(SH_circuit)
+            A_list = mps_of_layer[current_depth]
+            delta_list.append(np.sum(expectation_values(A_list, H_list))-E_exact.item())
+            t_list.append(t_list[-1]+dt)
+
+            print(t_list[-1],delta_list[-1])
+
+
 
     pl.close()
     pl.semilogy(t_list[1:],delta_list,'.')
