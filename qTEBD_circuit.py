@@ -198,13 +198,13 @@ def var_gate(new_mps, site, mps_cache):
     M = np.tensordot(M, theta_top, axes=([0, 3], [1, 3])) #lower_p, lower_q, upper_p, upper_q
     M = M.reshape([4, 4])
 
-    M_copy = M.reshape([2, 2, 2, 2]).copy()
-    M_copy = M_copy[:, 0, :, :]
-    U, _, Vd = np.linalg.svd(M_copy.reshape([2, 4]), full_matrices=False)
-    new_gate = np.dot(U, Vd).reshape([2, 2, 2])
-    new_gate_ = np.random.rand(2, 2, 2, 2)
-    new_gate_[:, 0, :, :] = new_gate
-    return new_gate_
+    # M_copy = M.reshape([2, 2, 2, 2]).copy()
+    # M_copy = M_copy[:, 0, :, :]
+    # U, _, Vd = np.linalg.svd(M_copy.reshape([2, 4]), full_matrices=False)
+    # new_gate = np.dot(U, Vd).reshape([2, 2, 2])
+    # new_gate_ = np.random.rand(2, 2, 2, 2)
+    # new_gate_[:, 0, :, :] = new_gate
+    # return new_gate_
 
     # new_gate = polar(M)
     U, _, Vd = np.linalg.svd(M, full_matrices=False)
@@ -212,7 +212,6 @@ def var_gate(new_mps, site, mps_cache):
     # new_gate = np.dot(Vd.T.conjugate(), U.T.conjugate())
     new_gate = new_gate.reshape([2, 2, 2, 2])
 
-    import pdb;pdb.set_trace()
     return new_gate
 
 def apply_gate(A_list, gate, idx):
@@ -411,7 +410,7 @@ if __name__ == "__main__":
     J = 1.
     g = 1.5
     N_iter = 1
-    depth = 1
+    depth = 2
 
     SH_circuit = []
 
