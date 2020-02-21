@@ -209,5 +209,6 @@ if __name__ == "__main__":
     pl.xlabel('$\\tau$')
     pl.ylabel('$E_{\\tau} - E_0$')
     pl.legend(['$\\chi=%.0f$'%chi])
-    pl.savefig('plot.pdf')
+    pl.savefig('finite_chi%d.pdf' % chi)
+    pl.savefig('finite_chi%d.png' % chi)
     pl.show()
