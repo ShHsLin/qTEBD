@@ -2,16 +2,26 @@
 
 ## qTEBD with MPS
  
-![](figure/finite_L10_chi2.png)
-![](figure/finite_L10_chi4.png)
+![](figure/finite_L10.png)
 
 ## qTEBD with circuit
 
+### Single-layer circuit
 ![](figure/circuit_L10_depth1.png)
 
+### n-layer circuit
 There are different way to optimize n-layer circuit. Here we consider to randomly initialize 2-layer and optimize Niter time per time step.
 ![](figure/circuit_L10_depth2.png)
-![](figure/circuit_L4_depth2.png)
 
-To be updated: Iterative optimization for each layer.
+
+With small initialization
+![](figure/sinit_circuit_L10_depth2.png)
+
+
+## TODO
+. Iterative optimization for each layer. Optimize first layer and fix first layer. Then add second layer and optimize second layer and so on.
+
+. Scaling with Niter
+. The effect in the pattern of the layer of gates
+
 

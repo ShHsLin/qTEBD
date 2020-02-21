@@ -48,10 +48,14 @@ def polar(A):
     Y,D,Z = np.linalg.svd(A.reshape(d*chi1,chi2), full_matrices=False)
     return np.dot(Y,Z).reshape([d,chi1,chi2])
 
-def random_2site_U(d):
-    M = np.random.rand(d ** 2, d ** 2)
-    Q, _ = np.linalg.qr(0.5 - M)
-    return Q.reshape([d] * 4)
+def random_2site_U(d, factor=1e-2):
+    A = np.random.rand(d**2, d**2) * factor
+    A = A-A.T
+    U = (np.eye(d**2)-A).dot(np.linalg.inv(np.eye(d**2)+A))
+    return U.reshape([d] * 4)
+    # M = np.random.rand(d ** 2, d ** 2)
+    # Q, _ = np.linalg.qr(0.5 - M)
+    # return Q.reshape([d] * 4)
 
 def circuit_2_mps(circuit, chi=None):
     '''
@@ -409,6 +413,9 @@ if __name__ == "__main__":
     chi = 4
     J = 1.
     g = 1.5
+    H_list  =  get_H_TFI(L, J, g)
+    E_exact =  ed.get_E_Ising_exact(g,J,L)
+
     N_iter = 1
     N_iter_list = [1, 2, 10]
     for N_iter in N_iter_list:
@@ -416,8 +423,6 @@ if __name__ == "__main__":
 
         my_circuit = []
 
-        H_list  =  get_H_TFI(L, J, g)
-        E_exact =  ed.get_E_Ising_exact(g,J,L)
         # delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
         # t_list = [0]
         delta_list = []
@@ -483,5 +488,5 @@ if __name__ == "__main__":
     pl.ylabel('$E_{\\tau} - E_0$')
     # pl.legend(['$depth=%d$'%depth])
     pl.legend()
-    pl.savefig('figure/circuit_L%d_depth%d.png' % (L, depth))
+    pl.savefig('figure/sinit_circuit_L%d_depth%d.png' % (L, depth))
     pl.show()
