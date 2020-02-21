@@ -2,7 +2,10 @@
 
 ## qTEBD with MPS
  
-![](figure/finite_L10.png)
+L 10                         |  L 20
+:---------------------------:|:-------------------------:
+![](figure/finite_L10.png)   |  ![](figure/finite_L20.png)
+
 
 ## qTEBD with circuit
 
