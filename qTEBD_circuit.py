@@ -450,8 +450,8 @@ if __name__ == "__main__":
 
                 for iter_idx in range(N_iter):
                     iter_mps = [A.copy() for A in new_mps]
-                    # for var_dep_idx in range(current_depth, 0, -1):
-                    for var_dep_idx in range(current_depth, current_depth-1, -1):
+                    for var_dep_idx in range(current_depth, 0, -1):
+                    # for var_dep_idx in range(current_depth, current_depth-1, -1):
                         # circuit is modified inplace
                         # new mps is returned
                         iter_mps, new_layer = var_layer([A.copy() for A in iter_mps],
