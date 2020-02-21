@@ -175,7 +175,7 @@ if __name__ == "__main__":
     np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
     L = 10
-    chi = 2
+    chi = 4
     J = 1.
     g = 1.5
     N_iter = 1
@@ -209,6 +209,5 @@ if __name__ == "__main__":
     pl.xlabel('$\\tau$')
     pl.ylabel('$E_{\\tau} - E_0$')
     pl.legend(['$\\chi=%.0f$'%chi])
-    pl.savefig('finite_chi%d.pdf' % chi)
-    pl.savefig('finite_chi%d.png' % chi)
+    pl.savefig('finite_L%d_chi%d.png' % (L, chi))
     pl.show()

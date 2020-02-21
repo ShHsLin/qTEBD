@@ -410,68 +410,78 @@ if __name__ == "__main__":
     J = 1.
     g = 1.5
     N_iter = 1
-    depth = 2
+    N_iter_list = [1, 2, 10]
+    for N_iter in N_iter_list:
+        depth = 2
 
-    SH_circuit = []
+        my_circuit = []
 
-    H_list  =  get_H_TFI(L, J, g)
-    E_exact =  ed.get_E_Ising_exact(g,J,L)
-    # delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
-    # t_list = [0]
-    delta_list = []
-    t_list = [0]
-    for dep_idx in range(depth):
-        random_layer = [random_2site_U(2) for i in range(L-1)]
-        SH_circuit.append(random_layer)
-        current_depth = dep_idx + 1
+        H_list  =  get_H_TFI(L, J, g)
+        E_exact =  ed.get_E_Ising_exact(g,J,L)
+        # delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
+        # t_list = [0]
+        delta_list = []
+        t_list = [0]
+        for dep_idx in range(depth):
+            # if dep_idx > 0:
+            #     identity_layer = [np.eye(4).reshape([2, 2, 2, 2]) for i in range(L-1)]
+            #     my_circuit.append(identity_layer)
+            # else:
+            #     random_layer = [random_2site_U(2) for i in range(L-1)]
+            #     my_circuit.append(random_layer)
+            random_layer = [random_2site_U(2) for i in range(L-1)]
+            my_circuit.append(random_layer)
+            current_depth = dep_idx + 1
 
-    for dt in [0.05,0.01,0.001]:
-    # for dt in [0.5,0.1,0.01]:
-        U_list =  make_U(H_list, dt)
-        for i in range(int(20//dt**(0.75))):
-            mps_of_layer = circuit_2_mps(SH_circuit)
-            mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
-            assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-            new_mps = apply_U(mps_of_last_layer,  U_list, 0)
-            new_mps = apply_U(new_mps, U_list, 1)
-            print("Norm new mps = ", overlap(new_mps, new_mps), "new state aimed dE = ",
-                  np.sum(expectation_values(new_mps, H_list, check_norm=False))/overlap(new_mps, new_mps)-
-                  E_exact.item()
-                 )
-            # new_mps is the e(-H)|psi0> which is not normalizaed.
+        for dt in [0.05,0.01,0.001]:
+        # for dt in [0.5,0.1,0.01]:
+            U_list =  make_U(H_list, dt)
+            for i in range(int(20//dt**(0.75))):
+                mps_of_layer = circuit_2_mps(my_circuit)
+                mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+                assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+                new_mps = apply_U(mps_of_last_layer,  U_list, 0)
+                new_mps = apply_U(new_mps, U_list, 1)
+                print("Norm new mps = ", overlap(new_mps, new_mps), "new state aimed dE = ",
+                      np.sum(expectation_values(new_mps, H_list, check_norm=False))/overlap(new_mps, new_mps)-
+                      E_exact.item()
+                     )
+                # new_mps is the e(-H)|psi0> which is not normalizaed.
 
-            for iter_idx in range(N_iter):
-                iter_mps = [A.copy() for A in new_mps]
-                for var_dep_idx in range(current_depth, 0, -1):
-                    # circuit is modified inplace
-                    # new mps is returned
-                    iter_mps, new_layer = var_layer([A.copy() for A in iter_mps],
-                                                    SH_circuit[var_dep_idx - 1],
-                                                    mps_of_layer[var_dep_idx - 1],
-                                                   )
-                    assert(len(new_layer) == L -1)
-                    SH_circuit[var_dep_idx - 1] = new_layer
+                for iter_idx in range(N_iter):
+                    iter_mps = [A.copy() for A in new_mps]
+                    # for var_dep_idx in range(current_depth, 0, -1):
+                    for var_dep_idx in range(current_depth, current_depth-1, -1):
+                        # circuit is modified inplace
+                        # new mps is returned
+                        iter_mps, new_layer = var_layer([A.copy() for A in iter_mps],
+                                                        my_circuit[var_dep_idx - 1],
+                                                        mps_of_layer[var_dep_idx - 1],
+                                                       )
+                        assert(len(new_layer) == L -1)
+                        my_circuit[var_dep_idx - 1] = new_layer
 
-                mps_of_layer = circuit_2_mps(SH_circuit)
+                    mps_of_layer = circuit_2_mps(my_circuit)
 
-            # [Todo] log the fedility here
-            mps_of_layer = circuit_2_mps(SH_circuit)
-            mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
-            assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-            delta_list.append(np.sum(expectation_values(mps_of_last_layer, H_list))-E_exact.item())
-            t_list.append(t_list[-1]+dt)
+                # [Todo] log the fedility here
+                mps_of_layer = circuit_2_mps(my_circuit)
+                mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+                assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+                delta_list.append(np.sum(expectation_values(mps_of_last_layer, H_list))-E_exact.item())
+                t_list.append(t_list[-1]+dt)
 
-            print(t_list[-1],delta_list[-1])
+                print(t_list[-1],delta_list[-1])
 
 
 
-    pl.close()
-    pl.semilogy(t_list[1:],delta_list,'.')
+        # pl.close()
+        pl.semilogy(t_list[1:],delta_list,'.', label='N_iter=%d' % N_iter)
+
     # pl.title('$depth=%d$' % depth + ', $L=$' + str(L))
-    pl.title('2-site gate circuit' + ', $L=$' + str(L))
+    pl.title('2-site gate circuit' + ' $depth=%d$' % depth + ', $L=$' + str(L))
     pl.xlabel('$\\tau$')
     pl.ylabel('$E_{\\tau} - E_0$')
-    pl.legend(['$depth=%d$'%depth])
-    pl.savefig('circuit_depth%d.pdf' % depth)
-    pl.savefig('circuit_depth%d.png' % depth)
+    # pl.legend(['$depth=%d$'%depth])
+    pl.legend()
+    pl.savefig('circuit_L%d_depth%d.png' % (L, depth))
     pl.show()
