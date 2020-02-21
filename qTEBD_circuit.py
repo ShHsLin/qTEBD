@@ -15,7 +15,9 @@ def get_H_TFI(L, J, g):
     d = 2
 
     def h(gl, gr, J):
-        return (-np.kron(sz, sz) * J - gr * np.kron(id, sx) - gl * np.kron(sx, id)).reshape([d] * 4)
+        # return (-np.kron(sz, sz) * J - gr * np.kron(id, sx) - gl * np.kron(sx, id)).reshape([d] * 4)
+        return (-np.kron(sx, sx) * J - gr * np.kron(id, sz) - gl * np.kron(sz, id)).reshape([d] * 4)
+
     H = []
     for j in range(L - 1):
         if j == 0:
@@ -489,4 +491,4 @@ if __name__ == "__main__":
     # pl.legend(['$depth=%d$'%depth])
     pl.legend()
     pl.savefig('figure/sinit_circuit_L%d_depth%d.png' % (L, depth))
-    pl.show()
+    # pl.show()
