@@ -50,7 +50,7 @@ def polar(A):
 
 def random_2site_U(d):
     M = np.random.rand(d ** 2, d ** 2)
-    Q, _ = np.linalg.qr(M)
+    Q, _ = np.linalg.qr(0.5 - M)
     return Q.reshape([d] * 4)
 
 def circuit_2_mps(circuit, chi=None):
@@ -81,6 +81,8 @@ def circuit_2_mps(circuit, chi=None):
 
     mps_of_layer = []
     mps_of_layer.append([A.copy() for A in A_list])
+    # A_list is modified inplace always.
+    # so we always have to copy A tensors.
     for dep_idx in range(depth):
         U_list = circuit[dep_idx]
         A_list = apply_U_all(A_list, U_list)
@@ -133,27 +135,34 @@ def var_layer(new_mps, layer_gate, mps_old):
 
     '''
     L = len(layer_gate) + 1
-    list_of_A_list = apply_U_all(mps_old, layer_gate, cache=True)
+    list_of_A_list = apply_U_all([t.copy() for t in mps_old],
+                                 layer_gate,
+                                 cache=True)
+    # we copy the tensor in mps_old, so that mps_old is not modified.
+    # [Notice] apply_U_all function modified the A_list inplace.
+    # [Todo] maybe change the behavior above. not inplace?
     assert(len(list_of_A_list) == L)
     # L - 1 gate, includding not applying gate
     # idx=0 not applying gate,
     # idx=1, state after applying gate-0 on site-0, site-1.
     # idx=2, state after applying gate-1 on site-1, site-2.
-    new_layer = []
+    new_layer = [None] * (L-1)
 
     for idx in range(L - 2, -1, -1):
         mps_cache = list_of_A_list[idx]
-        new_gate = var_gate(new_mps, layer_gate[idx], idx, mps_cache)
-        new_layer.append(new_gate)
+        new_gate = var_gate(new_mps, idx, mps_cache)
+        new_layer[idx] = new_gate
         # conjugate the gate
         # <psi|U = (U^\dagger |psi>)^\dagger
         new_gate_conj = new_gate.reshape([4, 4]).T.conj()
         new_gate_conj = new_gate_conj.reshape([2, 2, 2, 2])
+        # new_gate_conj = np.einsum('ijkl->klij', new_gate).conj()
+
         apply_gate(new_mps, new_gate_conj, idx)
 
     return new_mps, new_layer
 
-def var_gate(new_mps, gate, site, mps_cache):
+def var_gate(new_mps, site, mps_cache):
     '''
     max
     <new_mps | gate | mps_cache>
@@ -189,12 +198,21 @@ def var_gate(new_mps, gate, site, mps_cache):
     M = np.tensordot(M, theta_top, axes=([0, 3], [1, 3])) #lower_p, lower_q, upper_p, upper_q
     M = M.reshape([4, 4])
 
+    M_copy = M.reshape([2, 2, 2, 2]).copy()
+    M_copy = M_copy[:, 0, :, :]
+    U, _, Vd = np.linalg.svd(M_copy.reshape([2, 4]), full_matrices=False)
+    new_gate = np.dot(U, Vd).reshape([2, 2, 2])
+    new_gate_ = np.random.rand(2, 2, 2, 2)
+    new_gate_[:, 0, :, :] = new_gate
+    return new_gate_
+
     # new_gate = polar(M)
     U, _, Vd = np.linalg.svd(M, full_matrices=False)
-    # new_gate = np.dot(U, Vd)
-    new_gate = np.dot(Vd.T.conjugate(), U.T.conjugate())
+    new_gate = np.dot(U, Vd)
+    # new_gate = np.dot(Vd.T.conjugate(), U.T.conjugate())
     new_gate = new_gate.reshape([2, 2, 2, 2])
 
+    import pdb;pdb.set_trace()
     return new_gate
 
 def apply_gate(A_list, gate, idx):
@@ -205,7 +223,7 @@ def apply_gate(A_list, gate, idx):
     d2,chi2,chi3 = A_list[idx + 1].shape
 
     theta = np.tensordot(A_list[idx], A_list[idx + 1],axes=(2,1))
-    theta = np.tensordot(U_list[idx], theta, axes=([0,1],[0,2]))
+    theta = np.tensordot(gate, theta, axes=([0,1],[0,2]))
     theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
     X, Y, Z = np.linalg.svd(theta, full_matrices=0)
@@ -234,7 +252,12 @@ def overlap(psi1,psi2):
     N = np.trace(N)
     return(N)
 
-def expectation_values(A_list, H_list):
+def expectation_values(A_list, H_list, check_norm=True):
+    if check_norm:
+        assert np.isclose(overlap(A_list, A_list), 1.)
+    else:
+        pass
+
     L = len(A_list)
     Lp = np.zeros([1, 1])
     Lp[0, 0] = 1.
@@ -250,14 +273,15 @@ def expectation_values(A_list, H_list):
 
     E_list = []
     for i in range(L - 2, -1, -1):
-        Rp = np.tensordot(A_list[i+1].conj(),Rp, axes=(2, 1))
-        E = np.tensordot(A_list[i].conj(),Rp, axes=(2, 1))
-        E = np.tensordot(H_list[i],E, axes=([0,1], [0,2]))
-        E = np.tensordot(A_list[i+1],E, axes=([0,2], [1,3]))
-        E = np.tensordot(A_list[i],E, axes=([0,2], [1,0]))
+        Rp = np.tensordot(A_list[i+1].conj(),Rp, axes=(2, 1)) #[p,l,r] [d,u] -> [p,l,d]
+        E = np.tensordot(A_list[i].conj(),Rp, axes=(2, 1)) #[p,l,r] [q,L,R] -> [p,l,q,R]
+        E = np.tensordot(H_list[i],E, axes=([0,1], [0,2])) # [p,q, r,s] , [p,l,q,R] -> [r,s, l,R]
+        E = np.tensordot(A_list[i+1],E, axes=([0,2], [1,3])) # [s, L, R], [r,s, l,R] -> [L, r, l]
+        E = np.tensordot(A_list[i],E, axes=([0,2], [1,0])) # [r, ll, L] [L, r, l] -> [ll, l]
         E = np.tensordot(Lp_list[i],E, axes=([0,1],[0,1]))
         Rp = np.tensordot(A_list[i+1],Rp,axes=([0,2], [0,2]))
         E_list.append(E.item())
+
     return E_list
 
 def apply_U_all(A_list, U_list, cache=False):
@@ -339,7 +363,7 @@ def apply_U(A_list, U_list, onset):
         Ap_list[i]   = X.reshape([d1, chi1, chi2])
         Ap_list[i+1] = np.dot(np.diag(Y), Z).reshape([chi2, d2, chi3]).transpose([1, 0, 2])
 
-    return(Ap_list)
+    return Ap_list
 
 def var_A(A_list, Ap_list):
     L = len(A_list)
@@ -382,11 +406,11 @@ def var_A(A_list, Ap_list):
 if __name__ == "__main__":
     np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
-    L = 4
+    L = 10
     chi = 4
     J = 1.
     g = 1.5
-    N_iter = 10
+    N_iter = 1
     depth = 1
 
     SH_circuit = []
@@ -402,12 +426,19 @@ if __name__ == "__main__":
         SH_circuit.append(random_layer)
         current_depth = dep_idx + 1
 
-    for dt in [0.05,0.01]: # ,0.001]:
+    for dt in [0.05,0.01,0.001]:
+    # for dt in [0.5,0.1,0.01]:
         U_list =  make_U(H_list, dt)
         for i in range(int(20//dt**(0.75))):
             mps_of_layer = circuit_2_mps(SH_circuit)
-            new_mps = apply_U(mps_of_layer[current_depth],  U_list, 0)
+            mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+            assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+            new_mps = apply_U(mps_of_last_layer,  U_list, 0)
             new_mps = apply_U(new_mps, U_list, 1)
+            print("Norm new mps = ", overlap(new_mps, new_mps), "new state aimed dE = ",
+                  np.sum(expectation_values(new_mps, H_list, check_norm=False))/overlap(new_mps, new_mps)-
+                  E_exact.item()
+                 )
             # new_mps is the e(-H)|psi0> which is not normalizaed.
 
             for iter_idx in range(N_iter):
@@ -415,10 +446,10 @@ if __name__ == "__main__":
                 for var_dep_idx in range(current_depth, 0, -1):
                     # circuit is modified inplace
                     # new mps is returned
-                    iter_mps, new_layer = var_layer(iter_mps,
-                                                   SH_circuit[var_dep_idx - 1],
-                                                   mps_of_layer[var_dep_idx - 1],
-                                                  )
+                    iter_mps, new_layer = var_layer([A.copy() for A in iter_mps],
+                                                    SH_circuit[var_dep_idx - 1],
+                                                    mps_of_layer[var_dep_idx - 1],
+                                                   )
                     assert(len(new_layer) == L -1)
                     SH_circuit[var_dep_idx - 1] = new_layer
 
@@ -426,8 +457,9 @@ if __name__ == "__main__":
 
             # [Todo] log the fedility here
             mps_of_layer = circuit_2_mps(SH_circuit)
-            A_list = mps_of_layer[current_depth]
-            delta_list.append(np.sum(expectation_values(A_list, H_list))-E_exact.item())
+            mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+            assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+            delta_list.append(np.sum(expectation_values(mps_of_last_layer, H_list))-E_exact.item())
             t_list.append(t_list[-1]+dt)
 
             print(t_list[-1],delta_list[-1])
@@ -436,9 +468,10 @@ if __name__ == "__main__":
 
     pl.close()
     pl.semilogy(t_list[1:],delta_list,'.')
-    pl.title('$\\chi=$'+str(chi) + ', $L=$' + str(L))
+    # pl.title('$depth=%d$' % depth + ', $L=$' + str(L))
+    pl.title('2-site gate circuit' + ', $L=$' + str(L))
     pl.xlabel('$\\tau$')
     pl.ylabel('$E_{\\tau} - E_0$')
-    pl.legend(['$\\chi=%.0f$'%chi])
-    pl.savefig('plot.pdf')
+    pl.legend(['$depth=%d$'%depth])
+    pl.savefig('circuit_depth%d.pdf' % depth)
     pl.show()
