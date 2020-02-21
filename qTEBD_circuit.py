@@ -483,5 +483,5 @@ if __name__ == "__main__":
     pl.ylabel('$E_{\\tau} - E_0$')
     # pl.legend(['$depth=%d$'%depth])
     pl.legend()
-    pl.savefig('circuit_L%d_depth%d.png' % (L, depth))
+    pl.savefig('figure/circuit_L%d_depth%d.png' % (L, depth))
     pl.show()
