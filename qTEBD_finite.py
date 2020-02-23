@@ -1,8 +1,9 @@
 from scipy import integrate
 from scipy.linalg import expm
 import numpy as np
-import pylab as pl
 import exact_diagonalization as ed
+import misc, os
+
 
 def get_H_TFI(L, J, g):
     '''
@@ -174,10 +175,15 @@ def var_A(A_list, Ap_list, sweep='left'):
 if __name__ == "__main__":
     np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
-    L = 10
-    chi = 4
+    import sys
+    L = int(sys.argv[1])
+    # g = 1.5
+    g = float(sys.argv[2])
+    chi = int(sys.argv[3])
+
+    ## [TODO] add check whether data already
+
     J = 1.
-    g = 1.5
     N_iter = 1
 
     A_list  =  init_mps(L,chi,2)
@@ -185,6 +191,7 @@ if __name__ == "__main__":
     E_exact =  ed.get_E_Ising_exact(g,J,L)
     delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
     t_list = [0]
+    E_list = [np.sum(expectation_values(A_list, H_list))]
     for dt in [0.05,0.01,0.001]:
         U_list =  make_U(H_list, dt)
         for i in range(int(20//dt**(0.75))):
@@ -199,15 +206,42 @@ if __name__ == "__main__":
                 A_list  = var_A(A_list, Ap_list, 'right')
 
             delta_list.append(np.sum(expectation_values(A_list, H_list))-E_exact.item())
+            E_list.append(np.sum(expectation_values(A_list, H_list)))
             t_list.append(t_list[-1]+dt)
 
             print(t_list[-1],delta_list[-1])
 
-    pl.close()
-    pl.semilogy(t_list,delta_list,'.')
-    pl.title('$\\chi=$'+str(chi) + ', $L=$' + str(L))
-    pl.xlabel('$\\tau$')
-    pl.ylabel('$E_{\\tau} - E_0$')
-    pl.legend(['$\\chi=%.0f$'%chi])
-    pl.savefig('figure/finite_L%d_chi%d.png' % (L, chi))
-    pl.show()
+    dir_path = 'data/1d_TFI_g%.1f/L%d/' % (g, L)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    filename = 'mps_chi%d_E.npy' % chi
+    path = dir_path + filename
+    np.save(path, np.array(E_list))
+
+    filename = 'mps_chi%d_dt.npy' % chi
+    path = dir_path + filename
+    np.save(path, np.array(t_list))
+
+    dir_path = 'data/1d_TFI_g%.1f/' % (g)
+    best_E = np.amin(E_list)
+    filename = 'mps_chi%d_E.csv' % chi
+    path = dir_path + filename
+    # Try to load file 
+    # If data return
+    E_dict = {}
+    try:
+        E_array = misc.load_array(path)
+        E_dict = misc.nparray_2_dict(E_array)
+        assert L in E_dict.keys()
+        print("Found data")
+    except Exception as error:
+        print(error)
+        E_dict[L] = best_E
+        misc.save_array(path, misc.dict_2_nparray(E_dict))
+        # If no data --> generate data
+        print("Save new data")
+
+
+
+
