@@ -192,11 +192,13 @@ if __name__ == "__main__":
     delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
     t_list = [0]
     E_list = [np.sum(expectation_values(A_list, H_list))]
+    update_error_list = [0.]
     for dt in [0.05,0.01,0.001]:
         U_list =  make_U(H_list, dt)
         for i in range(int(20//dt**(0.75))):
             Ap_list = apply_U(A_list,  U_list, 0)
             Ap_list = apply_U(Ap_list, U_list, 1)
+            # Ap_list = e^(-H) | A_list >
             print("Norm new mps = ", overlap(Ap_list, Ap_list), "new state aimed dE = ",
                   np.sum(expectation_values(Ap_list, H_list))/overlap(Ap_list, Ap_list)-
                   E_exact.item()
@@ -205,8 +207,12 @@ if __name__ == "__main__":
             for a in range(N_iter):
                 A_list  = var_A(A_list, Ap_list, 'right')
 
-            delta_list.append(np.sum(expectation_values(A_list, H_list))-E_exact.item())
-            E_list.append(np.sum(expectation_values(A_list, H_list)))
+            fidelity_reached = np.abs(overlap(Ap_list, A_list))**2 / overlap(Ap_list, Ap_list)
+            print("fidelity reached : ", fidelity_reached)
+            update_error_list.append(1. - fidelity_reached)
+            current_energy = np.sum(expectation_values(A_list, H_list))
+            delta_list.append(current_energy-E_exact.item())
+            E_list.append(current_energy)
             t_list.append(t_list[-1]+dt)
 
             print(t_list[-1],delta_list[-1])
@@ -215,7 +221,7 @@ if __name__ == "__main__":
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    filename = 'mps_chi%d_E.npy' % chi
+    filename = 'mps_chi%d_energy.npy' % chi
     path = dir_path + filename
     np.save(path, np.array(E_list))
 
@@ -223,9 +229,13 @@ if __name__ == "__main__":
     path = dir_path + filename
     np.save(path, np.array(t_list))
 
+    filename = 'mps_chi%d_error.npy' % chi
+    path = dir_path + filename
+    np.save(path, np.array(update_error_list))
+
     dir_path = 'data/1d_TFI_g%.1f/' % (g)
     best_E = np.amin(E_list)
-    filename = 'mps_chi%d_E.csv' % chi
+    filename = 'mps_chi%d_energy.csv' % chi
     path = dir_path + filename
     # Try to load file 
     # If data return
