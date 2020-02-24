@@ -3,6 +3,8 @@ from scipy.linalg import expm
 import numpy as np
 import pylab as pl
 import exact_diagonalization as ed
+import misc, os
+import sys
 
 def get_H_TFI(L, J, g):
     '''
@@ -411,84 +413,112 @@ def var_A(A_list, Ap_list):
 if __name__ == "__main__":
     np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
-    L = 10
-    chi = 4
+    L = int(sys.argv[1])
     J = 1.
-    g = 1.5
+    g = float(sys.argv[2])
+    depth = int(sys.argv[3])
     H_list  =  get_H_TFI(L, J, g)
-    E_exact =  ed.get_E_Ising_exact(g,J,L)
+    # E_exact =  ed.get_E_Ising_exact(g,J,L)
+    N_iter = int(sys.argv[4])
 
-    N_iter = 1
-    N_iter_list = [1, 2, 10]
-    for N_iter in N_iter_list:
-        depth = 2
+    my_circuit = []
 
-        my_circuit = []
+    # delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
+    t_list = [0]
+    E_list = []
+    update_error_list = [0.]
 
-        # delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
-        # t_list = [0]
-        delta_list = []
-        t_list = [0]
-        for dep_idx in range(depth):
-            # if dep_idx > 0:
-            #     identity_layer = [np.eye(4).reshape([2, 2, 2, 2]) for i in range(L-1)]
-            #     my_circuit.append(identity_layer)
-            # else:
-            #     random_layer = [random_2site_U(2) for i in range(L-1)]
-            #     my_circuit.append(random_layer)
-            random_layer = [random_2site_U(2) for i in range(L-1)]
-            my_circuit.append(random_layer)
-            current_depth = dep_idx + 1
+    for dep_idx in range(depth):
+        # if dep_idx > 0:
+        #     identity_layer = [np.eye(4).reshape([2, 2, 2, 2]) for i in range(L-1)]
+        #     my_circuit.append(identity_layer)
+        # else:
+        #     random_layer = [random_2site_U(2) for i in range(L-1)]
+        #     my_circuit.append(random_layer)
+        random_layer = [random_2site_U(2) for i in range(L-1)]
+        my_circuit.append(random_layer)
+        current_depth = dep_idx + 1
 
-        for dt in [0.05,0.01,0.001]:
-        # for dt in [0.5,0.1,0.01]:
-            U_list =  make_U(H_list, dt)
-            for i in range(int(20//dt**(0.75))):
+    mps_of_layer = circuit_2_mps(my_circuit)
+    E_list.append(np.sum(expectation_values(mps_of_layer[-1], H_list)))
+
+    for dt in [0.05,0.01,0.001]:
+        U_list =  make_U(H_list, dt)
+        for i in range(int(20//dt**(0.75))):
+            mps_of_layer = circuit_2_mps(my_circuit)
+            mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+            assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+            new_mps = apply_U(mps_of_last_layer,  U_list, 0)
+            new_mps = apply_U(new_mps, U_list, 1)
+            print("Norm new mps = ", overlap(new_mps, new_mps), "new state aimed E = ",
+                  np.sum(expectation_values(new_mps, H_list, check_norm=False))/overlap(new_mps, new_mps)
+                 )
+            # new_mps is the e(-H)|psi0> which is not normalizaed.
+
+            for iter_idx in range(N_iter):
+                iter_mps = [A.copy() for A in new_mps]
+                for var_dep_idx in range(current_depth, 0, -1):
+                # for var_dep_idx in range(current_depth, current_depth-1, -1):
+                    # circuit is modified inplace
+                    # new mps is returned
+                    iter_mps, new_layer = var_layer([A.copy() for A in iter_mps],
+                                                    my_circuit[var_dep_idx - 1],
+                                                    mps_of_layer[var_dep_idx - 1],
+                                                   )
+                    assert(len(new_layer) == L -1)
+                    my_circuit[var_dep_idx - 1] = new_layer
+
                 mps_of_layer = circuit_2_mps(my_circuit)
-                mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
-                assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-                new_mps = apply_U(mps_of_last_layer,  U_list, 0)
-                new_mps = apply_U(new_mps, U_list, 1)
-                print("Norm new mps = ", overlap(new_mps, new_mps), "new state aimed dE = ",
-                      np.sum(expectation_values(new_mps, H_list, check_norm=False))/overlap(new_mps, new_mps)-
-                      E_exact.item()
-                     )
-                # new_mps is the e(-H)|psi0> which is not normalizaed.
 
-                for iter_idx in range(N_iter):
-                    iter_mps = [A.copy() for A in new_mps]
-                    for var_dep_idx in range(current_depth, 0, -1):
-                    # for var_dep_idx in range(current_depth, current_depth-1, -1):
-                        # circuit is modified inplace
-                        # new mps is returned
-                        iter_mps, new_layer = var_layer([A.copy() for A in iter_mps],
-                                                        my_circuit[var_dep_idx - 1],
-                                                        mps_of_layer[var_dep_idx - 1],
-                                                       )
-                        assert(len(new_layer) == L -1)
-                        my_circuit[var_dep_idx - 1] = new_layer
+            # [Todo] log the fedility here
+            mps_of_layer = circuit_2_mps(my_circuit)
+            mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+            assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+            current_energy = np.sum(expectation_values(mps_of_last_layer, H_list))
+            # delta_list.append(np.sum(expectation_values(mps_of_last_layer, H_list))-E_exact.item())
+            E_list.append(current_energy)
+            t_list.append(t_list[-1]+dt)
+            # print(t_list[-1],delta_list[-1])
 
-                    mps_of_layer = circuit_2_mps(my_circuit)
-
-                # [Todo] log the fedility here
-                mps_of_layer = circuit_2_mps(my_circuit)
-                mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
-                assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-                delta_list.append(np.sum(expectation_values(mps_of_last_layer, H_list))-E_exact.item())
-                t_list.append(t_list[-1]+dt)
-
-                print(t_list[-1],delta_list[-1])
+            fidelity_reached = np.abs(overlap(new_mps, mps_of_last_layer))**2 / overlap(new_mps, new_mps)
+            print("fidelity reached : ", fidelity_reached)
+            update_error_list.append(1. - fidelity_reached)
 
 
 
-        # pl.close()
-        pl.semilogy(t_list[1:],delta_list,'.', label='N_iter=%d' % N_iter)
+    dir_path = 'data/1d_TFI_g%.1f/L%d/' % (g, L)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
-    # pl.title('$depth=%d$' % depth + ', $L=$' + str(L))
-    pl.title('2-site gate circuit' + ' $depth=%d$' % depth + ', $L=$' + str(L))
-    pl.xlabel('$\\tau$')
-    pl.ylabel('$E_{\\tau} - E_0$')
-    # pl.legend(['$depth=%d$'%depth])
-    pl.legend()
-    pl.savefig('figure/sinit_circuit_L%d_depth%d.png' % (L, depth))
-    # pl.show()
+    filename = 'circuit_depth%d_Niter%d_energy.npy' % (depth, N_iter)
+    path = dir_path + filename
+    np.save(path, np.array(E_list))
+
+    filename = 'circuit_depth%d_Niter%d_dt.npy' % (depth, N_iter)
+    path = dir_path + filename
+    np.save(path, np.array(t_list))
+
+    filename = 'circuit_depth%d_Niter%d_error.npy' % (depth, N_iter)
+    path = dir_path + filename
+    np.save(path, np.array(update_error_list))
+
+    dir_path = 'data/1d_TFI_g%.1f/' % (g)
+    best_E = np.amin(E_list)
+    filename = 'citcuit_depth%d_Niter%d_energy.csv' % (depth, N_iter)
+    path = dir_path + filename
+    # Try to load file 
+    # If data return
+    E_dict = {}
+    try:
+        E_array = misc.load_array(path)
+        E_dict = misc.nparray_2_dict(E_array)
+        assert L in E_dict.keys()
+        print("Found data")
+    except Exception as error:
+        print(error)
+        E_dict[L] = best_E
+        misc.save_array(path, misc.dict_2_nparray(E_dict))
+        # If no data --> generate data
+        print("Save new data")
+
+

@@ -177,7 +177,6 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
     import sys
     L = int(sys.argv[1])
-    # g = 1.5
     g = float(sys.argv[2])
     chi = int(sys.argv[3])
 
@@ -188,8 +187,8 @@ if __name__ == "__main__":
 
     A_list  =  init_mps(L,chi,2)
     H_list  =  get_H_TFI(L, J, g)
-    E_exact =  ed.get_E_Ising_exact(g,J,L)
-    delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
+    # E_exact =  ed.get_E_Ising_exact(g,J,L)
+    # delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
     t_list = [0]
     E_list = [np.sum(expectation_values(A_list, H_list))]
     update_error_list = [0.]
@@ -199,9 +198,8 @@ if __name__ == "__main__":
             Ap_list = apply_U(A_list,  U_list, 0)
             Ap_list = apply_U(Ap_list, U_list, 1)
             # Ap_list = e^(-H) | A_list >
-            print("Norm new mps = ", overlap(Ap_list, Ap_list), "new state aimed dE = ",
-                  np.sum(expectation_values(Ap_list, H_list))/overlap(Ap_list, Ap_list)-
-                  E_exact.item()
+            print("Norm new mps = ", overlap(Ap_list, Ap_list), "new state aimed E = ",
+                  np.sum(expectation_values(Ap_list, H_list))/overlap(Ap_list, Ap_list)
                  )
 
             for a in range(N_iter):
@@ -211,11 +209,11 @@ if __name__ == "__main__":
             print("fidelity reached : ", fidelity_reached)
             update_error_list.append(1. - fidelity_reached)
             current_energy = np.sum(expectation_values(A_list, H_list))
-            delta_list.append(current_energy-E_exact.item())
+            # delta_list.append(current_energy-E_exact.item())
             E_list.append(current_energy)
             t_list.append(t_list[-1]+dt)
 
-            print(t_list[-1],delta_list[-1])
+            # print(t_list[-1],delta_list[-1])
 
     dir_path = 'data/1d_TFI_g%.1f/L%d/' % (g, L)
     if not os.path.exists(dir_path):
