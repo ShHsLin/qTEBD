@@ -24,16 +24,16 @@ def example_DMRG_tf_ising_finite(L, g, chi, verbose=True):
     psi = MPS.from_product_state(M.lat.mps_sites(), product_state, bc=M.lat.bc_MPS)
     dmrg_params = {
         'mixer': None,  # setting this to True helps to escape local minima
-        'max_E_err': 1.e-12,
+        'max_E_err': 1.e-16,
         'trunc_params': {
             'chi_max': chi,
-            'svd_min': 1.e-12
+            'svd_min': 1.e-16
         },
         'verbose': verbose,
     }
     info = dmrg.run(psi, M, dmrg_params)  # the main work...
     E = info['E']
-    print("E = {E:.13f}".format(E=E))
+    print("E = {E:.16f}".format(E=E))
     print("final bond dimensions: ", psi.chi)
     mag_x = np.sum(psi.expectation_value("Sigmax"))
     mag_z = np.sum(psi.expectation_value("Sigmaz"))

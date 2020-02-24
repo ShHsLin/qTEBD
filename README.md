@@ -1,26 +1,36 @@
 # qTEBD
 
 ## qTEBD with MPS
+
+The red line indicate the DMRG result. qTEBD with MPS match with DMRG with same bond dimension exactly when 2nd-order trotter gate is applied.
  
-L 10                         |  L 20
+#### g = 1.1
+L 10 1st order trotter       |  L 10 2nd order trotter
 :---------------------------:|:-------------------------:
-![](figure/finite_L10.png)   |  ![](figure/finite_L20.png)
+![](figure/finite_L10_g1.1_1st.png)   |  ![](figure/finite_L10_g1.1_2nd.png)
+
+#### g = 1.5
+L 10 1st order trotter       |  L 10 2nd order trotter
+:---------------------------:|:-------------------------:
+![](figure/finite_L10_g1.5_1st.png)   |  ![](figure/finite_L10_g1.5_2nd.png)
 
 
 ## qTEBD with circuit
 
-### Single-layer circuit
-![](figure/circuit_L10_depth1.png)
+#### g = 1.1
+#### g = 1.5
+L 10 1st order trotter       |  L 10 2nd order trotter
+:---------------------------:|:-------------------------:
+![](figure/circuit_L10_g1.5_1st.png)   |  ![](figure/circuit_L10_g1.5_2nd.png)
 
+
+
+### Single-layer circuit
 ### n-layer circuit
 
+
 * There are different way to optimize n-layer circuit. Here we consider to randomly initialize 2-layer and optimize Niter time per time step.
- 
-![](figure/circuit_L10_depth2.png)
-
-
 * With near identity initialization and change Hamiltonian basis.
-![](figure/sinit_circuit_L10_depth2.png)
 
 
 ## TODO

@@ -8,6 +8,7 @@ import seaborn as sns
 if __name__ == '__main__':
     L = int(sys.argv[1])
     g = float(sys.argv[2])
+    order = str(sys.argv[3])
 
     plt.close()
     fig=plt.figure(figsize=(6,8))
@@ -29,8 +30,10 @@ if __name__ == '__main__':
             if depth == 1 and N_iter != 1:
                 continue
 
+            # order = '2nd'
+
             dir_path = 'data/1d_TFI_g%.1f/' % (g)
-            filename = 'citcuit_depth%d_Niter%d_energy.csv' % (depth, N_iter)
+            filename = 'circuit_depth%d_Niter%d_%s_energy.csv' % (depth, N_iter, order)
             path = dir_path + filename
             # Try to load file 
             # If data return
@@ -39,19 +42,28 @@ if __name__ == '__main__':
             circuit_E = circuit_E_dict[L]
             print("Found circuit data")
 
+            chi = 2 ** depth
+            filename = 'dmrg_chi%d_energy.csv' % chi
+            path = dir_path + filename
+            dmrg_E_array = misc.load_array(path)
+            dmrg_E_dict = misc.nparray_2_dict(dmrg_E_array)
+            dmrg_E = dmrg_E_dict[L]
+            print("Found dmrg data")
+
+
 
             ############################################
             dir_path = 'data/1d_TFI_g%.1f/L%d/' % (g, L)
 
-            filename = 'circuit_depth%d_Niter%d_energy.npy' % (depth, N_iter)
+            filename = 'circuit_depth%d_Niter%d_%s_energy.npy' % (depth, N_iter, order)
             path = dir_path + filename
             E_list = np.load(path)
 
-            filename = 'circuit_depth%d_Niter%d_dt.npy' % (depth, N_iter)
+            filename = 'circuit_depth%d_Niter%d_%s_dt.npy' % (depth, N_iter, order)
             path = dir_path + filename
             t_list = np.load(path)
 
-            filename = 'circuit_depth%d_Niter%d_error.npy' % (depth, N_iter)
+            filename = 'circuit_depth%d_Niter%d_%s_error.npy' % (depth, N_iter, order)
             path = dir_path + filename
             update_error_list = np.load(path)
 
@@ -59,6 +71,7 @@ if __name__ == '__main__':
 
             ax1 = plt.subplot(211)
             plt.semilogy(t_list, delta_list,'.', label='depth$=%d$, Niter$=%d$' % (depth, N_iter))
+            plt.axhline(y=dmrg_E-exact_E, color='r', linestyle='-', label='dmrg $\\chi=%d$' % chi)
             plt.setp(ax1.get_xticklabels(), fontsize=6)
             plt.ylabel('$E_{\\tau} - E_0$')
 
@@ -71,9 +84,11 @@ if __name__ == '__main__':
     plt.subplots_adjust(hspace=0)
 
     # pl.title('2-site gate circuit' + ' $depth=%d$' % depth + ', $L=$' + str(L))
-    plt.suptitle('Circuit ' + ', $L=$' + str(L))
+    plt.suptitle('Circuit ' + ', $L=$' + str(L) + ' %s-order' % order)
     plt.xlabel('$\\tau$')
     plt.legend()
+    plt.savefig('figure/circuit_L%d_g%.1f_%s.png' % (L, g, order))
+
     # plt.savefig('figure/finite_L%d_chi%d.png' % (L, chi))
     # plt.savefig('figure/finite_L%d.png' % (L))
     plt.show()
