@@ -421,6 +421,12 @@ if __name__ == "__main__":
     # E_exact =  ed.get_E_Ising_exact(g,J,L)
     N_iter = int(sys.argv[4])
 
+    second_order = True
+    if second_order:
+        order = '2nd'
+    else:
+        order = '1st'
+
     my_circuit = []
 
     # delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
@@ -444,12 +450,20 @@ if __name__ == "__main__":
 
     for dt in [0.05,0.01,0.001]:
         U_list =  make_U(H_list, dt)
+        U_half_list =  make_U(H_list, dt/2.)
         for i in range(int(20//dt**(0.75))):
             mps_of_layer = circuit_2_mps(my_circuit)
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+            # [TODO] remove the assertion below
             assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-            new_mps = apply_U(mps_of_last_layer,  U_list, 0)
-            new_mps = apply_U(new_mps, U_list, 1)
+            if second_order:
+                new_mps = apply_U(mps_of_last_layer,  U_half_list, 0)
+                new_mps = apply_U(new_mps, U_list, 1)
+                new_mps = apply_U(new_mps, U_half_list, 0)
+            else:
+                new_mps = apply_U(mps_of_last_layer,  U_list, 0)
+                new_mps = apply_U(new_mps, U_list, 1)
+
             print("Norm new mps = ", overlap(new_mps, new_mps), "new state aimed E = ",
                   np.sum(expectation_values(new_mps, H_list, check_norm=False))/overlap(new_mps, new_mps)
                  )
@@ -490,21 +504,21 @@ if __name__ == "__main__":
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    filename = 'circuit_depth%d_Niter%d_energy.npy' % (depth, N_iter)
+    filename = 'circuit_depth%d_Niter%d_%s_energy.npy' % (depth, N_iter, order)
     path = dir_path + filename
     np.save(path, np.array(E_list))
 
-    filename = 'circuit_depth%d_Niter%d_dt.npy' % (depth, N_iter)
+    filename = 'circuit_depth%d_Niter%d_%s_dt.npy' % (depth, N_iter, order)
     path = dir_path + filename
     np.save(path, np.array(t_list))
 
-    filename = 'circuit_depth%d_Niter%d_error.npy' % (depth, N_iter)
+    filename = 'circuit_depth%d_Niter%d_%s_error.npy' % (depth, N_iter, order)
     path = dir_path + filename
     np.save(path, np.array(update_error_list))
 
     dir_path = 'data/1d_TFI_g%.1f/' % (g)
     best_E = np.amin(E_list)
-    filename = 'citcuit_depth%d_Niter%d_energy.csv' % (depth, N_iter)
+    filename = 'circuit_depth%d_Niter%d_%s_energy.csv' % (depth, N_iter, order)
     path = dir_path + filename
     # Try to load file 
     # If data return

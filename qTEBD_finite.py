@@ -3,6 +3,7 @@ from scipy.linalg import expm
 import numpy as np
 import exact_diagonalization as ed
 import misc, os
+import sys
 
 
 def get_H_TFI(L, J, g):
@@ -175,10 +176,14 @@ def var_A(A_list, Ap_list, sweep='left'):
 if __name__ == "__main__":
     np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
-    import sys
     L = int(sys.argv[1])
     g = float(sys.argv[2])
     chi = int(sys.argv[3])
+    second_order = False
+    if second_order:
+        order = '2nd'
+    else:
+        order = '1st'
 
     ## [TODO] add check whether data already
 
@@ -194,9 +199,16 @@ if __name__ == "__main__":
     update_error_list = [0.]
     for dt in [0.05,0.01,0.001]:
         U_list =  make_U(H_list, dt)
+        U_half_list =  make_U(H_list, dt/2.)
         for i in range(int(20//dt**(0.75))):
-            Ap_list = apply_U(A_list,  U_list, 0)
-            Ap_list = apply_U(Ap_list, U_list, 1)
+            if second_order:
+                Ap_list = apply_U(A_list, U_half_list, 0)
+                Ap_list = apply_U(Ap_list, U_list, 1)
+                Ap_list = apply_U(Ap_list, U_half_list, 0)
+            else:
+                Ap_list = apply_U(A_list,  U_list, 0)
+                Ap_list = apply_U(Ap_list, U_list, 1)
+
             # Ap_list = e^(-H) | A_list >
             print("Norm new mps = ", overlap(Ap_list, Ap_list), "new state aimed E = ",
                   np.sum(expectation_values(Ap_list, H_list))/overlap(Ap_list, Ap_list)
@@ -219,21 +231,21 @@ if __name__ == "__main__":
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    filename = 'mps_chi%d_energy.npy' % chi
+    filename = 'mps_chi%d_%s_energy.npy' % (chi, order)
     path = dir_path + filename
     np.save(path, np.array(E_list))
 
-    filename = 'mps_chi%d_dt.npy' % chi
+    filename = 'mps_chi%d_%s_dt.npy' % (chi, order)
     path = dir_path + filename
     np.save(path, np.array(t_list))
 
-    filename = 'mps_chi%d_error.npy' % chi
+    filename = 'mps_chi%d_%s_error.npy' % (chi, order)
     path = dir_path + filename
     np.save(path, np.array(update_error_list))
 
     dir_path = 'data/1d_TFI_g%.1f/' % (g)
     best_E = np.amin(E_list)
-    filename = 'mps_chi%d_energy.csv' % chi
+    filename = 'mps_chi%d_%s_energy.csv' % (chi, order)
     path = dir_path + filename
     # Try to load file 
     # If data return
