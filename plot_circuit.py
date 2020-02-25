@@ -25,8 +25,8 @@ if __name__ == '__main__':
     print("Found exact energy data")
 
 
-    for depth in [1, 2]:
-        for N_iter in [1, 2, 10]:
+    for depth in [1, 2, 3]:
+        for N_iter in [1, 10]:
             if depth == 1 and N_iter != 1:
                 continue
 
@@ -41,15 +41,6 @@ if __name__ == '__main__':
             circuit_E_dict = misc.nparray_2_dict(circuit_E_array)
             circuit_E = circuit_E_dict[L]
             print("Found circuit data")
-
-            chi = 2 ** depth
-            filename = 'dmrg_chi%d_energy.csv' % chi
-            path = dir_path + filename
-            dmrg_E_array = misc.load_array(path)
-            dmrg_E_dict = misc.nparray_2_dict(dmrg_E_array)
-            dmrg_E = dmrg_E_dict[L]
-            print("Found dmrg data")
-
 
 
             ############################################
@@ -71,7 +62,6 @@ if __name__ == '__main__':
 
             ax1 = plt.subplot(211)
             plt.semilogy(t_list, delta_list,'.', label='depth$=%d$, Niter$=%d$' % (depth, N_iter))
-            plt.axhline(y=dmrg_E-exact_E, color='r', linestyle='-', label='dmrg $\\chi=%d$' % chi)
             plt.setp(ax1.get_xticklabels(), fontsize=6)
             plt.ylabel('$E_{\\tau} - E_0$')
 
@@ -79,6 +69,18 @@ if __name__ == '__main__':
             ax2 = plt.subplot(212, sharex=ax1)
             plt.semilogy(t_list, update_error_list,'.', label='depth$=%d$, Niter$=%d$' % (depth, N_iter))
             plt.ylabel('$1 - \mathcal{F}$')
+
+
+    for chi in [2, 4]:
+        dir_path = 'data/1d_TFI_g%.1f/' % (g)
+        filename = 'dmrg_chi%d_energy.csv' % chi
+        path = dir_path + filename
+        dmrg_E_array = misc.load_array(path)
+        dmrg_E_dict = misc.nparray_2_dict(dmrg_E_array)
+        dmrg_E = dmrg_E_dict[L]
+        print("Found dmrg data")
+        ax1 = plt.subplot(211)
+        plt.axhline(y=dmrg_E-exact_E, color='r', linestyle='-', label='dmrg $\\chi=%d$' % chi)
 
     plt.setp(ax1.get_xticklabels(), visible=False)
     plt.subplots_adjust(hspace=0)
