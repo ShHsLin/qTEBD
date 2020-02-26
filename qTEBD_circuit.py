@@ -6,6 +6,14 @@ import exact_diagonalization as ed
 import misc, os
 import sys
 
+def get_H(L, J, g, Hamiltonian):
+    if Hamiltonian == 'TFI':
+        return get_H_TFI(L, J, g)
+    elif Hamiltonian == 'XXZ':
+        return get_H_XXZ(L, J, g)
+    else:
+        raise
+
 def get_H_TFI(L, J, g):
     '''
     Return:
@@ -31,6 +39,25 @@ def get_H_TFI(L, J, g):
         else:
             gr = 0.5 * g
         H.append(h(gl, gr, J))
+    return H
+
+def get_H_XXZ(L, J, g):
+    '''
+    H_XXZX = J XX + J YY + Jg ZZ
+    '''
+    sx = np.array([[0, 1], [1, 0]])
+    sy = np.array([[0, -1.j], [1.j, 0]])
+    sz = np.array([[1, 0], [0, -1]])
+    id = np.eye(2)
+    d = 2
+
+    def h(g, J):
+        return (np.kron(sx, sx) * J + np.kron(sy, sy) * J + np.kron(sz, sz) * J * g ).reshape([d] * 4)
+
+    H = []
+    for j in range(L - 1):
+        H.append(h(g, J).real)
+
     return H
 
 def make_U(H, t):
@@ -417,12 +444,12 @@ if __name__ == "__main__":
     J = 1.
     g = float(sys.argv[2])
     depth = int(sys.argv[3])
-    H_list  =  get_H_TFI(L, J, g)
-    # E_exact =  ed.get_E_Ising_exact(g,J,L)
     N_iter = int(sys.argv[4])
     order = str(sys.argv[5])
 
     assert order in ['1st', '2nd']
+    Hamiltonian = 'XXZ'
+    H_list  =  get_H(L, J, g, Hamiltonian)
 
     my_circuit = []
 
@@ -497,7 +524,7 @@ if __name__ == "__main__":
 
 
 
-    dir_path = 'data/1d_TFI_g%.1f/L%d/' % (g, L)
+    dir_path = 'data/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
@@ -513,7 +540,7 @@ if __name__ == "__main__":
     path = dir_path + filename
     np.save(path, np.array(update_error_list))
 
-    dir_path = 'data/1d_TFI_g%.1f/' % (g)
+    dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
     best_E = np.amin(E_list)
     filename = 'circuit_depth%d_Niter%d_%s_energy.csv' % (depth, N_iter, order)
     path = dir_path + filename

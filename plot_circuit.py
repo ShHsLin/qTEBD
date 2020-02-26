@@ -9,12 +9,13 @@ if __name__ == '__main__':
     L = int(sys.argv[1])
     g = float(sys.argv[2])
     order = str(sys.argv[3])
+    Hamiltonian = 'XXZ'
 
     plt.close()
     fig=plt.figure(figsize=(6,8))
 
     ############################################
-    dir_path = 'data/1d_TFI_g%.1f/' % (g)
+    dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
     filename = 'exact_energy.csv'
     path = dir_path + filename
     # Try to load file 
@@ -32,7 +33,7 @@ if __name__ == '__main__':
 
             # order = '2nd'
 
-            dir_path = 'data/1d_TFI_g%.1f/' % (g)
+            dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
             filename = 'circuit_depth%d_Niter%d_%s_energy.csv' % (depth, N_iter, order)
             path = dir_path + filename
             # Try to load file 
@@ -44,7 +45,7 @@ if __name__ == '__main__':
 
 
             ############################################
-            dir_path = 'data/1d_TFI_g%.1f/L%d/' % (g, L)
+            dir_path = 'data/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
 
             filename = 'circuit_depth%d_Niter%d_%s_energy.npy' % (depth, N_iter, order)
             path = dir_path + filename
@@ -72,7 +73,7 @@ if __name__ == '__main__':
 
 
     for chi in [2, 4]:
-        dir_path = 'data/1d_TFI_g%.1f/' % (g)
+        dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
         filename = 'dmrg_chi%d_energy.csv' % chi
         path = dir_path + filename
         dmrg_E_array = misc.load_array(path)
@@ -89,7 +90,7 @@ if __name__ == '__main__':
     plt.suptitle('Circuit ' + ', $L=$' + str(L) + ' %s-order' % order)
     plt.xlabel('$\\tau$')
     plt.legend()
-    plt.savefig('figure/circuit_L%d_g%.1f_%s.png' % (L, g, order))
+    plt.savefig('figure/%s/circuit_L%d_g%.1f_%s.png' % (Hamiltonian, L, g, order))
 
     # plt.savefig('figure/finite_L%d_chi%d.png' % (L, chi))
     # plt.savefig('figure/finite_L%d.png' % (L))

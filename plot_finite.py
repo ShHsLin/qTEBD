@@ -6,12 +6,13 @@ import sys, os, misc
 if __name__ == '__main__':
     L = int(sys.argv[1])
     g = float(sys.argv[2])
+    H = 'XXZ'
 
     plt.close()
     fig=plt.figure(figsize=(6,8))
 
     ############################################
-    dir_path = 'data/1d_TFI_g%.1f/' % (g)
+    dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
     filename = 'exact_energy.csv'
     path = dir_path + filename
     # Try to load file 
@@ -24,7 +25,7 @@ if __name__ == '__main__':
 
     order = '2nd'
     for chi in [2, 4]:
-        dir_path = 'data/1d_TFI_g%.1f/' % (g)
+        dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
         filename = 'mps_chi%d_%s_energy.csv' % (chi, order)
         path = dir_path + filename
         mps_E_array = misc.load_array(path)
@@ -43,7 +44,7 @@ if __name__ == '__main__':
 
 
         ############################################
-        dir_path = 'data/1d_TFI_g%.1f/L%d/' % (g, L)
+        dir_path = 'data/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
 
         filename = 'mps_chi%d_%s_energy.npy' % (chi, order)
         path = dir_path + filename
@@ -78,6 +79,6 @@ if __name__ == '__main__':
     # plt.legend(['$\\chi=%.0f$'%chi])
     plt.legend()
     # plt.savefig('figure/finite_L%d_chi%d.png' % (L, chi))
-    plt.savefig('figure/finite_L%d_g%.1f_%s.png' % (L, g, order))
+    plt.savefig('figure/%s/finite_L%d_g%.1f_%s.png' % (Hamiltonian, L, g, order))
     # plt.savefig('figure/finite_L%d.png' % (L))
     plt.show()

@@ -54,7 +54,7 @@ def get_H_XXZ(L, J, g):
 
     H = []
     for j in range(L - 1):
-        H.append(h(g, J))
+        H.append(h(g, J).real)
 
     return H
 
