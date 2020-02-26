@@ -36,7 +36,7 @@ L 10 1st order trotter       |  L 10 2nd order trotter
 ### XXZ Jz = 1.
 L 10 1st order trotter       |  L 10 2nd order trotter
 :---------------------------:|:-------------------------:
-![](figure/XXZ/circuit_L10_g1.0_1st.png)   |  ![]()
+![](figure/XXZ/circuit_L10_g1.0_1st.png)   |  ![](figure/XXZ/circuit_L10_g1.0_2nd.png)
 
 
 
