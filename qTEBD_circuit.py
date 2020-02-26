@@ -422,11 +422,7 @@ if __name__ == "__main__":
     N_iter = int(sys.argv[4])
     order = str(sys.argv[5])
 
-    # second_order = True
-    # if second_order:
-    #     order = '2nd'
-    # else:
-    #     order = '1st'
+    assert order in ['1st', '2nd']
 
     my_circuit = []
 

@@ -78,6 +78,38 @@ def example_DMRG_tf_ising_infinite(g, verbose=True):
     print("relative error: ", abs((E - E_exact) / E_exact))
     return E, psi, M
 
+def example_DMRG_heisenberg_xxz_finite(L, Jz, chi, conserve='best', verbose=True):
+    print("finite DMRG, Heisenberg XXZ chain")
+    print("L={L:d}, Jz={Jz:.2f}".format(L=L, Jz=Jz))
+    model_params = dict(L=L, S=0.5, Jx=1., Jy=1., Jz=Jz,
+                        bc_MPS='finite', conserve=conserve, verbose=verbose)
+    M = SpinModel(model_params)
+    product_state = ["up", "down"] * (M.lat.N_sites // 2)
+    psi = MPS.from_product_state(M.lat.mps_sites(), product_state, bc=M.lat.bc_MPS)
+    dmrg_params = {
+        'mixer': True,  # setting this to True helps to escape local minima
+        'max_E_err': 1.e-16,
+        'trunc_params': {
+            'chi_max': chi,
+            'svd_min': 1.e-16
+        },
+        'verbose': verbose,
+    }
+    info = dmrg.run(psi, M, dmrg_params)  # the main work...
+    E = info['E']
+    E = E * 4
+    print("E = {E:.13f}".format(E=E))
+    print("final bond dimensions: ", psi.chi)
+    Sz = psi.expectation_value("Sz")  # Sz instead of Sigma z: spin-1/2 operators!
+    mag_z = np.mean(Sz)
+    print("<S_z> = [{Sz0:.5f}, {Sz1:.5f}]; mean ={mag_z:.5f}".format(Sz0=Sz[0],
+                                                                     Sz1=Sz[1],
+                                                                     mag_z=mag_z))
+    # note: it's clear that mean(<Sz>) is 0: the model has Sz conservation!
+    corrs = psi.correlation_function("Sz", "Sz", sites1=range(10))
+    print("correlations <Sz_i Sz_j> =")
+    print(corrs)
+    return E, psi, M
 
 def example_DMRG_heisenberg_xxz_infinite(Jz, conserve='best', verbose=True):
     print("infinite DMRG, Heisenberg XXZ chain")
@@ -124,14 +156,20 @@ if __name__ == "__main__":
     L = int(sys.argv[1])
     g = float(sys.argv[2])
     chi = int(sys.argv[3])
+    Hamiltonian = str(sys.argv[4])
+    assert Hamiltonian in ['TFI', 'XXZ']
 
-    dmrg_E, psi, M = example_DMRG_tf_ising_finite(L=L, g=g, chi=chi)
+    if Hamiltonian == 'TFI':
+        dmrg_E, psi, M = example_DMRG_tf_ising_finite(L=L, g=g, chi=chi)
+    else:
+        dmrg_E, psi, M = example_DMRG_heisenberg_xxz_finite(L=L, Jz=g, chi=chi)
+
     # print("-" * 100)
     # example_DMRG_tf_ising_infinite(g=1.5)
     # print("-" * 100)
     # example_DMRG_heisenberg_xxz_infinite(Jz=1.5)
 
-    dir_path = 'data/1d_TFI_g%.1f/' % (g)
+    dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
