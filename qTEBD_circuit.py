@@ -420,12 +420,13 @@ if __name__ == "__main__":
     H_list  =  get_H_TFI(L, J, g)
     # E_exact =  ed.get_E_Ising_exact(g,J,L)
     N_iter = int(sys.argv[4])
+    order = str(sys.argv[5])
 
-    second_order = True
-    if second_order:
-        order = '2nd'
-    else:
-        order = '1st'
+    # second_order = True
+    # if second_order:
+    #     order = '2nd'
+    # else:
+    #     order = '1st'
 
     my_circuit = []
 
@@ -456,7 +457,7 @@ if __name__ == "__main__":
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
             # [TODO] remove the assertion below
             assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-            if second_order:
+            if order == '2nd':
                 new_mps = apply_U(mps_of_last_layer,  U_half_list, 0)
                 new_mps = apply_U(new_mps, U_list, 1)
                 new_mps = apply_U(new_mps, U_half_list, 0)

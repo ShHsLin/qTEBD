@@ -25,7 +25,7 @@ We consider quantum circuit of 2-site gates, where the gates is arranged in the 
 #### g = 1.0
 L 10 1st order trotter       |  L 10 2nd order trotter
 :---------------------------:|:-------------------------:
-![]()   |  ![](figure/circuit_L10_g1.0_2nd.png)
+![](figure/circuit_L10_g1.0_1st.png)   |  ![](figure/circuit_L10_g1.0_2nd.png)
 
 
 #### g = 1.5
