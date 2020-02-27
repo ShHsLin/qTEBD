@@ -261,7 +261,7 @@ def apply_gate(A_list, gate, idx):
     theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
     X, Y, Z = np.linalg.svd(theta, full_matrices=0)
-    chi2 = np.sum(Y>10.**(-10))
+    chi2 = np.sum(Y>10.**(-15))
 
     piv = np.zeros(len(Y), np.bool)
     piv[(np.argsort(Y)[::-1])[:chi2]] = True
@@ -339,7 +339,7 @@ def apply_U_all(A_list, U_list, cache=False):
         theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
         X, Y, Z = np.linalg.svd(theta, full_matrices=0)
-        chi2 = np.sum(Y>10.**(-10))
+        chi2 = np.sum(Y>10.**(-15))
 
         piv = np.zeros(len(Y), np.bool)
         piv[(np.argsort(Y)[::-1])[:chi2]] = True
@@ -384,7 +384,7 @@ def apply_U(A_list, U_list, onset):
         theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
         X, Y, Z = np.linalg.svd(theta,full_matrices=0)
-        chi2 = np.sum(Y>10.**(-10))
+        chi2 = np.sum(Y>10.**(-15))
 
         piv = np.zeros(len(Y), np.bool)
         piv[(np.argsort(Y)[::-1])[:chi2]] = True
@@ -475,7 +475,7 @@ if __name__ == "__main__":
     for dt in [0.05,0.01,0.001]:
         U_list =  make_U(H_list, dt)
         U_half_list =  make_U(H_list, dt/2.)
-        for i in range(int(20//dt**(0.75))):
+        for i in range(int(40//dt**(0.75))):
             mps_of_layer = circuit_2_mps(my_circuit)
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
             # [TODO] remove the assertion below
@@ -547,11 +547,14 @@ if __name__ == "__main__":
     # Try to load file 
     # If data return
     E_dict = {}
+    overwrite = True
     try:
         E_array = misc.load_array(path)
         E_dict = misc.nparray_2_dict(E_array)
         assert L in E_dict.keys()
         print("Found data")
+        if overwrite:
+            raise
     except Exception as error:
         print(error)
         E_dict[L] = best_E

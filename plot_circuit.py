@@ -26,8 +26,8 @@ if __name__ == '__main__':
     print("Found exact energy data")
 
 
-    for depth in [1, 2, 3]:
-        for N_iter in [1, 10]:
+    for depth in [1, 4]:
+        for N_iter in [1, 2, 10]:
             if depth == 1 and N_iter != 1:
                 continue
 
