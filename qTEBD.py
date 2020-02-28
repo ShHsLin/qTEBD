@@ -1,7 +1,6 @@
 from scipy import integrate
 from scipy.linalg import expm
 import numpy as np
-import exact_diagonalization as ed
 import misc, os
 import sys
 
