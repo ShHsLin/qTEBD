@@ -1,7 +1,6 @@
 from scipy import integrate
 from scipy.linalg import expm
 import numpy as np
-import pylab as pl
 import exact_diagonalization as ed
 import misc, os
 import sys
@@ -16,6 +15,8 @@ def get_H(L, J, g, Hamiltonian):
 
 def get_H_TFI(L, J, g):
     '''
+    H_TFI = - J ZZ - g X
+    H_TFI = - J XX - g Z
     Return:
         H: list of local hamiltonian
     '''
@@ -71,6 +72,7 @@ def init_mps(L, chi, d):
         chi1 = np.min([d**np.min([i,L-i]),chi])
         chi2 = np.min([d**np.min([i+1,L-i-1]),chi])
         A_list.append(polar(0.5 - np.random.rand(d,chi1,chi2)))
+        # A_list.append(polar(np.random.rand(d,chi1,chi2)))
 
     return A_list
 
@@ -399,29 +401,55 @@ def apply_U(A_list, U_list, onset):
 
     return Ap_list
 
-def var_A(A_list, Ap_list):
+def var_A(A_list, Ap_list, sweep='left'):
     L = len(A_list)
-    Lp = np.zeros([1, 1])
-    Lp[0, 0] = 1.
-    Lp_list = [Lp]
+    if sweep == 'left':
+        Lp = np.zeros([1, 1])
+        Lp[0, 0] = 1.
+        Lp_list = [Lp]
 
-    for i in range(L):
-        Lp = np.tensordot(Lp, A_list[i], axes=(0, 1))
-        Lp = np.tensordot(Lp, Ap_list[i].conj(), axes=([0, 1], [1,0]))
-        Lp_list.append(Lp)
+        for i in range(L):
+            Lp = np.tensordot(Lp, A_list[i], axes=(0, 1))
+            Lp = np.tensordot(Lp, Ap_list[i].conj(), axes=([0, 1], [1,0]))
+            Lp_list.append(Lp)
 
-    Rp = np.zeros([1, 1])
-    Rp[0, 0] = 1.
+        Rp = np.zeros([1, 1])
+        Rp[0, 0] = 1.
 
-    A_list_new = [[] for i in range(L)]
-    for i in range(L - 1, -1, -1):
-        Rp = np.tensordot(Ap_list[i].conj(),Rp, axes=(2, 1))
-        theta = np.tensordot(Lp_list[i],Rp, axes=(1,1))
-        theta = theta.transpose(1,0,2)
-        A_list_new[i] = polar(theta)
-        Rp = np.tensordot(A_list_new[i], Rp, axes=([0,2], [0,2]))
+        A_list_new = [[] for i in range(L)]
+        for i in range(L - 1, -1, -1):
+            Rp = np.tensordot(Ap_list[i].conj(),Rp, axes=(2, 1))
+            theta = np.tensordot(Lp_list[i],Rp, axes=(1,1))
+            theta = theta.transpose(1,0,2)
+            A_list_new[i] = polar(theta)
+            Rp = np.tensordot(A_list_new[i], Rp, axes=([0,2], [0,2]))
 
-    return A_list_new
+        return A_list_new
+    elif sweep == 'right':
+        Rp = np.ones([1, 1])
+        Rp_list = [Rp]
+        for idx in range(L-1, -1, -1):
+            Rp = np.tensordot(A_list[idx], Rp, axes=(2, 0))
+            Rp = np.tensordot(Rp, Ap_list[idx].conj(), axes=([0, 2], [0, 2]))
+            Rp_list.append(Rp)
+
+        Lp = np.ones([1, 1])
+        A_list_new = [[] for i in range(L)]
+        for idx in range(L):
+            Lp = np.tensordot(Lp, Ap_list[idx].conj(), axes=(1, 1))
+            theta = np.tensordot(Lp, Rp_list[L-1-idx], axes=([2], [1]))
+            theta = theta.transpose(1,0,2)
+            A_list_new[idx] = polar(theta)
+            ## d,ci1,chi2 = theta.shape
+            ## Y,D,Z = np.linalg.svd(theta.reshape(d*chi1,chi2), full_matrices=False)
+            ## A_list_new[idx] = np.dot(Y,Z).reshape([d,chi1,chi2])
+            # print("overlap : ", np.einsum('ijk,ijk->', theta, polar(theta).conj()))
+            Lp = np.tensordot(A_list_new[idx], Lp, axes=([0, 1], [1, 0]))
+
+        return A_list_new
+    else:
+        raise NotImplementedError
+
 
 '''
     Algorithm:
@@ -435,7 +463,6 @@ def var_A(A_list, Ap_list):
         [ToDo] check the index n above whether is consistent with the code.
         ...
 '''
-
 
 if __name__ == "__main__":
     np.random.seed(1)
