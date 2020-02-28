@@ -3,6 +3,24 @@ from scipy.linalg import expm
 import numpy as np
 import misc, os, sys
 import qTEBD
+import autograd.numpy as np
+from autograd import grad
+
+def expm_eigh(t, h):
+    """
+    Compute the unitary operator of a hermitian matrix.
+    U = expm(-1j * h)
+
+    Arguments:
+    h :: ndarray (N X N) - The matrix to exponentiate, which must be hermitian.
+
+    Returns:
+    expm_h :: ndarray(N x N) - The unitary operator of a.
+    """
+    eigvals, p = np.linalg.eigh(h)
+    p_dagger = np.conjugate(np.swapaxes(p, -1, -2))
+    d = np.exp(t * eigvals)
+    return np.matmul(p *d, p_dagger)
 
 
 if __name__ == "__main__":
@@ -45,6 +63,25 @@ if __name__ == "__main__":
 
             for a in range(N_iter):
                 A_list  = qTEBD.var_A(A_list, Ap_list, 'right')
+
+            #### Gradient opt
+            # for k in range(100):
+            #     grad_A_list = grad(qTEBD.overlap, 1)(Ap_list, A_list)
+            #     for idx_2 in range(L):
+            #         d, chi1, chi2 = A_list[idx_2].shape
+            #         U = A_list[idx_2].reshape([d * chi1, chi2])
+            #         dU = grad_A_list[idx_2].reshape([d * chi1, chi2])
+            #         U, dU = U.T, dU.T
+            #         M = U.T.conj().dot(dU) - dU.T.conj().dot(U)
+            #         U_update = U.dot(expm_eigh(-dt*0.1, M))
+            #         U, dU, U_update = U.T, dU.T, U_update.T
+            #         # import pdb;pdb.set_trace()
+            #         A_list[idx_2] = U_update.reshape([d, chi1, chi2])
+            #         # A_list[idx_2] = A_list[idx_2] + dt * grad_A_list[idx_2]
+
+            #     for a in range(N_iter):
+            #         A_list  = qTEBD.var_A(A_list, A_list, 'right')
+
 
             fidelity_reached = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / qTEBD.overlap(Ap_list, Ap_list)
             print("fidelity reached : ", fidelity_reached)

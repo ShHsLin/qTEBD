@@ -2,6 +2,12 @@
 
 qTEBD is the algorithm for real or imaginary time evolution by fidelity maximization. We benchmark such algorithm on MPS for ground state search and quench problem. Then, we show that the algorithm can be generalized to classical simulation of quantum circuit.
 
+
+### Requirement
+
+numpy, jax, (TeNPy)
+
+
 ## qTEBD with MPS
 
 The red line indicate the DMRG result. qTEBD with MPS match with DMRG with same bond dimension exactly when 2nd-order trotter gate is applied.
@@ -61,5 +67,6 @@ Single-layer circuit should match with the result of qTEBD with MPS and DMRG wit
 
 #### Note
 * Does not seem to work : Iterative optimization for each layer. Optimize first layer and fix first layer. Then add second layer and optimize second layer and so on.
+* Gradient descent for optimizing fedility of qTEBD-MPS gives very small improvement on top of polar decomposition. Gradient descent itself alone does not work.
 
 

@@ -3,6 +3,29 @@ from scipy.linalg import expm
 import numpy as np
 import misc, os
 import sys
+## We use jax.numpy if possible
+## or autograd.numpy
+##
+## Regarding wether choosing to use autograd or jax
+## see https://github.com/google/jax/issues/193
+## Basically, if we do not use gpu or tpu and work with 
+## small problem size and do not want to spend time fixing
+## function with @jit, then autograd should be fine.
+
+try:
+    # import jax.numpy as np
+    import autograd.numpy as np
+    from autograd import grad
+    # from jax import random
+    # from jax import grad, jit, vmap
+    # from jax.config import config
+    # config.update("jax_enable_x64", True)
+except:
+    import numpy as np
+    print("some function may be broken")
+
+import numpy as onp
+
 
 def get_H(L, J, g, Hamiltonian):
     if Hamiltonian == 'TFI':
@@ -70,8 +93,8 @@ def init_mps(L, chi, d):
     for i in range(L):
         chi1 = np.min([d**np.min([i,L-i]),chi])
         chi2 = np.min([d**np.min([i+1,L-i-1]),chi])
-        A_list.append(polar(0.5 - np.random.rand(d,chi1,chi2)))
-        # A_list.append(polar(np.random.rand(d,chi1,chi2)))
+        A_list.append(polar(0.5 - onp.random.uniform(size=[d,chi1,chi2])))
+        # A_list.append(polar(onp.random.uniform(size=[d,chi1,chi2])))
 
     return A_list
 
@@ -81,11 +104,11 @@ def polar(A):
     return np.dot(Y,Z).reshape([d,chi1,chi2])
 
 def random_2site_U(d, factor=1e-2):
-    A = np.random.rand(d**2, d**2) * factor
+    A = onp.random.uniform(size=[d**2, d**2]) * factor
     A = A-A.T
     U = (np.eye(d**2)-A).dot(np.linalg.inv(np.eye(d**2)+A))
     return U.reshape([d] * 4)
-    # M = np.random.rand(d ** 2, d ** 2)
+    # M = onp.random.rand(d ** 2, d ** 2)
     # Q, _ = np.linalg.qr(0.5 - M)
     # return Q.reshape([d] * 4)
 
@@ -205,8 +228,7 @@ def var_gate(new_mps, site, mps_cache):
     where gate is actting on (site, site+1)
     '''
     L = len(new_mps)
-    Lp = np.zeros([1, 1])
-    Lp[0, 0] = 1.
+    Lp = np.ones([1, 1])
     Lp_list = [Lp]
 
     for i in range(L):
@@ -214,8 +236,7 @@ def var_gate(new_mps, site, mps_cache):
         Lp = np.tensordot(Lp, new_mps[i].conj(), axes=([0, 1], [1,0]))
         Lp_list.append(Lp)
 
-    Rp = np.zeros([1, 1])
-    Rp[0, 0] = 1.
+    Rp = np.ones([1, 1])
     Rp_list = [Rp]
 
     for i in range(L-1, -1, -1):
@@ -238,7 +259,7 @@ def var_gate(new_mps, site, mps_cache):
     # M_copy = M_copy[:, 0, :, :]
     # U, _, Vd = np.linalg.svd(M_copy.reshape([2, 4]), full_matrices=False)
     # new_gate = np.dot(U, Vd).reshape([2, 2, 2])
-    # new_gate_ = np.random.rand(2, 2, 2, 2)
+    # new_gate_ = onp.random.rand(2, 2, 2, 2)
     # new_gate_[:, 0, :, :] = new_gate
     # return new_gate_
 
@@ -264,13 +285,18 @@ def apply_gate(A_list, gate, idx):
     X, Y, Z = np.linalg.svd(theta, full_matrices=0)
     chi2 = np.sum(Y>10.**(-15))
 
-    piv = np.zeros(len(Y), np.bool)
-    piv[(np.argsort(Y)[::-1])[:chi2]] = True
+    # piv = np.zeros(len(Y), onp.bool)
+    # piv[(np.argsort(Y)[::-1])[:chi2]] = True
 
-    Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-    # Y = Y / invsq
-    X = X[:,piv]
-    Z = Z[piv,:]
+    # Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
+    # # Y = Y / invsq
+    # X = X[:,piv]
+    # Z = Z[piv,:]
+
+    arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
+    Y = Y[arg_sorted_idx]
+    X = X[: ,arg_sorted_idx]
+    Z = Z[arg_sorted_idx, :]
 
     X=np.reshape(X, (d1, chi1, chi2))
     A_list[idx]   = X.reshape([d1, chi1, chi2])
@@ -283,7 +309,7 @@ def overlap(psi1,psi2):
     for i in np.arange(L):
         N = np.tensordot(N,np.conj(psi1[i]), axes=(1,1)) # a ap 
         N = np.tensordot(N,psi2[i], axes=([0,1],[1,0])) # ap a
-        N = N.transpose(1,0)
+        N = np.transpose(N, [1,0])
     N = np.trace(N)
     return(N)
 
@@ -294,8 +320,7 @@ def expectation_values(A_list, H_list, check_norm=True):
         pass
 
     L = len(A_list)
-    Lp = np.zeros([1, 1])
-    Lp[0, 0] = 1.
+    Lp = np.ones([1, 1])
     Lp_list = [Lp]
 
     for i in range(L):
@@ -303,8 +328,7 @@ def expectation_values(A_list, H_list, check_norm=True):
         Lp = np.tensordot(Lp, A_list[i].conj(), axes=([0, 1], [1,0])) # b bp
         Lp_list.append(Lp)
 
-    Rp = np.zeros([1, 1])
-    Rp[0, 0] = 1.
+    Rp = np.ones([1, 1])
 
     E_list = []
     for i in range(L - 2, -1, -1):
@@ -342,13 +366,18 @@ def apply_U_all(A_list, U_list, cache=False):
         X, Y, Z = np.linalg.svd(theta, full_matrices=0)
         chi2 = np.sum(Y>10.**(-15))
 
-        piv = np.zeros(len(Y), np.bool)
-        piv[(np.argsort(Y)[::-1])[:chi2]] = True
+        # piv = np.zeros(len(Y), onp.bool)
+        # piv[(np.argsort(Y)[::-1])[:chi2]] = True
 
-        Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-        # Y = Y / invsq
-        X = X[:,piv]
-        Z = Z[piv,:]
+        # Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
+        # # Y = Y / invsq
+        # X = X[:,piv]
+        # Z = Z[piv,:]
+
+        arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
+        Y = Y[arg_sorted_idx]
+        X = X[: ,arg_sorted_idx]
+        Z = Z[arg_sorted_idx, :]
 
         X=np.reshape(X, (d1, chi1, chi2))
         A_list[i]   = X.reshape([d1, chi1, chi2])
@@ -387,12 +416,17 @@ def apply_U(A_list, U_list, onset):
         X, Y, Z = np.linalg.svd(theta,full_matrices=0)
         chi2 = np.sum(Y>10.**(-15))
 
-        piv = np.zeros(len(Y), np.bool)
-        piv[(np.argsort(Y)[::-1])[:chi2]] = True
+        # piv = np.zeros(len(Y), onp.bool)
+        # piv[(np.argsort(Y)[::-1])[:chi2]] = True
 
-        Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-        X = X[:,piv]
-        Z = Z[piv,:]
+        # Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
+        # X = X[:,piv]
+        # Z = Z[piv,:]
+
+        arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
+        Y = Y[arg_sorted_idx]
+        X = X[: ,arg_sorted_idx]
+        Z = Z[arg_sorted_idx, :]
 
         X=np.reshape(X, (d1, chi1, chi2))
         Ap_list[i]   = X.reshape([d1, chi1, chi2])
@@ -403,8 +437,7 @@ def apply_U(A_list, U_list, onset):
 def var_A(A_list, Ap_list, sweep='left'):
     L = len(A_list)
     if sweep == 'left':
-        Lp = np.zeros([1, 1])
-        Lp[0, 0] = 1.
+        Lp = np.ones([1, 1])
         Lp_list = [Lp]
 
         for i in range(L):
@@ -412,8 +445,7 @@ def var_A(A_list, Ap_list, sweep='left'):
             Lp = np.tensordot(Lp, Ap_list[i].conj(), axes=([0, 1], [1,0]))
             Lp_list.append(Lp)
 
-        Rp = np.zeros([1, 1])
-        Rp[0, 0] = 1.
+        Rp = np.ones([1, 1])
 
         A_list_new = [[] for i in range(L)]
         for i in range(L - 1, -1, -1):
@@ -437,7 +469,7 @@ def var_A(A_list, Ap_list, sweep='left'):
         for idx in range(L):
             Lp = np.tensordot(Lp, Ap_list[idx].conj(), axes=(1, 1))
             theta = np.tensordot(Lp, Rp_list[L-1-idx], axes=([2], [1]))
-            theta = theta.transpose(1,0,2)
+            theta = np.transpose(theta, [1,0,2])
             A_list_new[idx] = polar(theta)
             ## d,ci1,chi2 = theta.shape
             ## Y,D,Z = np.linalg.svd(theta.reshape(d*chi1,chi2), full_matrices=False)
@@ -464,7 +496,7 @@ def var_A(A_list, Ap_list, sweep='left'):
 '''
 
 if __name__ == "__main__":
-    np.random.seed(1)
+    onp.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
     L = int(sys.argv[1])
     J = 1.
