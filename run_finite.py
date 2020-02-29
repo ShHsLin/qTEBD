@@ -1,6 +1,6 @@
 from scipy import integrate
 from scipy.linalg import expm
-import numpy as np
+# import numpy as np
 import misc, os, sys
 import qTEBD
 import autograd.numpy as np
@@ -22,6 +22,8 @@ def expm_eigh(t, h):
     d = np.exp(t * eigvals)
     return np.matmul(p *d, p_dagger)
 
+def H_expectation_value(A_list, H_list):
+    return np.real(np.sum(qTEBD.expectation_values(A_list, H_list)))
 
 if __name__ == "__main__":
     np.random.seed(1)
@@ -61,19 +63,43 @@ if __name__ == "__main__":
                   np.sum(qTEBD.expectation_values(Ap_list, H_list, check_norm=False))/qTEBD.overlap(Ap_list, Ap_list)
                  )
 
-            for a in range(N_iter):
-                A_list  = qTEBD.var_A(A_list, Ap_list, 'right')
+            if t_list[-1] < 25:
+                ### POLAR DECOMPOSITION UPDATE ###
+                for a in range(N_iter):
+                    A_list  = qTEBD.var_A(A_list, Ap_list, 'right')
 
-            #### Gradient opt
-            # for k in range(100):
-            #     grad_A_list = grad(qTEBD.overlap, 1)(Ap_list, A_list)
+
+            else:
+                ## Gradient opt
+                for k in range(100):
+                    grad_A_list = grad(qTEBD.overlap, 1)(Ap_list, A_list)
+                    for idx_2 in range(L):
+                        d, chi1, chi2 = A_list[idx_2].shape
+                        U = A_list[idx_2].reshape([d * chi1, chi2])
+                        dU = grad_A_list[idx_2].reshape([d * chi1, chi2])
+                        U, dU = U.T, dU.T
+                        M = U.T.conj().dot(dU) - dU.T.conj().dot(U)
+                        U_update = U.dot(expm_eigh(+dt*0.01, M))
+                        U, dU, U_update = U.T, dU.T, U_update.T
+                        # import pdb;pdb.set_trace()
+                        A_list[idx_2] = U_update.reshape([d, chi1, chi2])
+                        # A_list[idx_2] = A_list[idx_2] + dt * grad_A_list[idx_2]
+
+                for a in range(N_iter):
+                    A_list  = qTEBD.var_A(A_list, A_list, 'right')
+
+            ############################################
+            ### Hamiltonian expectation minimization ###
+            ############################################
+            # if t_list[-1] >= 18:
+            #     grad_A_list = grad(H_expectation_value, 0)(A_list, H_list)
             #     for idx_2 in range(L):
             #         d, chi1, chi2 = A_list[idx_2].shape
             #         U = A_list[idx_2].reshape([d * chi1, chi2])
             #         dU = grad_A_list[idx_2].reshape([d * chi1, chi2])
             #         U, dU = U.T, dU.T
             #         M = U.T.conj().dot(dU) - dU.T.conj().dot(U)
-            #         U_update = U.dot(expm_eigh(-dt*0.1, M))
+            #         U_update = U.dot(expm_eigh(dt*0.01, M))
             #         U, dU, U_update = U.T, dU.T, U_update.T
             #         # import pdb;pdb.set_trace()
             #         A_list[idx_2] = U_update.reshape([d, chi1, chi2])
@@ -81,6 +107,8 @@ if __name__ == "__main__":
 
             #     for a in range(N_iter):
             #         A_list  = qTEBD.var_A(A_list, A_list, 'right')
+
+
 
 
             fidelity_reached = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / qTEBD.overlap(Ap_list, Ap_list)

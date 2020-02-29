@@ -1,4 +1,3 @@
-# import pylab as pl
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os, misc
@@ -6,7 +5,8 @@ import sys, os, misc
 if __name__ == '__main__':
     L = int(sys.argv[1])
     g = float(sys.argv[2])
-    H = 'XXZ'
+    order = str(sys.argv[3])
+    Hamiltonian = 'XXZ'
 
     plt.close()
     fig=plt.figure(figsize=(6,8))
@@ -23,7 +23,6 @@ if __name__ == '__main__':
     print("Found exact energy data")
 
 
-    order = '2nd'
     for chi in [2, 4]:
         dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
         filename = 'mps_chi%d_%s_energy.csv' % (chi, order)

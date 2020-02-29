@@ -1,6 +1,5 @@
 from scipy import integrate
 from scipy.linalg import expm
-import numpy as np
 import misc, os
 import sys
 ## We use jax.numpy if possible
@@ -93,8 +92,12 @@ def init_mps(L, chi, d):
     for i in range(L):
         chi1 = np.min([d**np.min([i,L-i]),chi])
         chi2 = np.min([d**np.min([i+1,L-i-1]),chi])
-        A_list.append(polar(0.5 - onp.random.uniform(size=[d,chi1,chi2])))
-        # A_list.append(polar(onp.random.uniform(size=[d,chi1,chi2])))
+        try:
+            A_list.append(polar(0.5 - np.random.uniform(size=[d,chi1,chi2])))
+            # A_list.append(polar(np.random.uniform(size=[d,chi1,chi2])))
+        except:
+            A_list.append(polar(0.5 - onp.random.uniform(size=[d,chi1,chi2])))
+            # A_list.append(polar(onp.random.uniform(size=[d,chi1,chi2])))
 
     return A_list
 
@@ -104,7 +107,11 @@ def polar(A):
     return np.dot(Y,Z).reshape([d,chi1,chi2])
 
 def random_2site_U(d, factor=1e-2):
-    A = onp.random.uniform(size=[d**2, d**2]) * factor
+    try:
+        A = np.random.uniform(size=[d**2, d**2]) * factor
+    except:
+        A = onp.random.uniform(size=[d**2, d**2]) * factor
+
     A = A-A.T
     U = (np.eye(d**2)-A).dot(np.linalg.inv(np.eye(d**2)+A))
     return U.reshape([d] * 4)
@@ -325,21 +332,21 @@ def expectation_values(A_list, H_list, check_norm=True):
 
     for i in range(L):
         Lp = np.tensordot(Lp, A_list[i], axes=(0, 1)) # ap i b
-        Lp = np.tensordot(Lp, A_list[i].conj(), axes=([0, 1], [1,0])) # b bp
+        Lp = np.tensordot(Lp, np.conj(A_list[i]), axes=([0, 1], [1,0])) # b bp
         Lp_list.append(Lp)
 
     Rp = np.ones([1, 1])
 
     E_list = []
     for i in range(L - 2, -1, -1):
-        Rp = np.tensordot(A_list[i+1].conj(),Rp, axes=(2, 1)) #[p,l,r] [d,u] -> [p,l,d]
-        E = np.tensordot(A_list[i].conj(),Rp, axes=(2, 1)) #[p,l,r] [q,L,R] -> [p,l,q,R]
+        Rp = np.tensordot(np.conj(A_list[i+1]), Rp, axes=(2, 1)) #[p,l,r] [d,u] -> [p,l,d]
+        E = np.tensordot(np.conj(A_list[i]), Rp, axes=(2, 1)) #[p,l,r] [q,L,R] -> [p,l,q,R]
         E = np.tensordot(H_list[i],E, axes=([0,1], [0,2])) # [p,q, r,s] , [p,l,q,R] -> [r,s, l,R]
         E = np.tensordot(A_list[i+1],E, axes=([0,2], [1,3])) # [s, L, R], [r,s, l,R] -> [L, r, l]
         E = np.tensordot(A_list[i],E, axes=([0,2], [1,0])) # [r, ll, L] [L, r, l] -> [ll, l]
         E = np.tensordot(Lp_list[i],E, axes=([0,1],[0,1]))
         Rp = np.tensordot(A_list[i+1],Rp,axes=([0,2], [0,2]))
-        E_list.append(E.item())
+        E_list.append(E[None][0])
 
     return E_list
 
