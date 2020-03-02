@@ -111,7 +111,6 @@ if __name__ == "__main__":
         #       np.sum(qTEBD.expectation_values(Ap_list, H_list, check_norm=False))/qTEBD.overlap(Ap_list, Ap_list)
         #      )
 
-        Ap_list = qTEBD.left_canonicalize(Ap_list)
         ### POLAR DECOMPOSITION UPDATE ###
         fidelity_before = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / qTEBD.overlap(Ap_list, Ap_list)
         print("fidelity before : ", fidelity_before)
