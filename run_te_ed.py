@@ -22,11 +22,11 @@ if __name__ == "__main__":
     H = 'TFI'
 
     if H == 'TFI':
-        dir_path = 'te_data/1d_TFI_g%.1f/L%d/' % (g, L)
+        dir_path = 'data_te/1d_TFI_g%.1f/L%d/' % (g, L)
         # H = xx + gz
         H = ed.get_H_Ising(g, J, L)
     elif H == 'XXZ':
-        dir_path = 'te_data/1d_XXZ_g%.1f/L%d/' % (g, L)
+        dir_path = 'data_te/1d_XXZ_g%.1f/L%d/' % (g, L)
         H = ed.get_H_XXZ(g, J, L)
 
     if not os.path.exists(dir_path):
@@ -55,18 +55,19 @@ if __name__ == "__main__":
     for site in range(L):
         sz_array[0, site] = ed.Op_expectation(Sz, L//2, psi, L)
 
-    for i in range(int(total_time // dt) +  1):
+    for i in range(1, int(total_time // dt) +  1):
         psi = scipy.sparse.linalg.expm_multiply(-1.j*dt*H, psi)
-        print("<E(%.2f)> : " % (i*dt), psi.conj().T.dot(H.dot(psi)))
         for site in range(L):
             sz_array[i, site] = ed.Op_expectation(Sz, L//2, psi, L)
+
+        print("<E(%.2f)> : " % (i*dt), psi.conj().T.dot(H.dot(psi)), "sz:", sz_array[i, L//2])
 
 
     filename = 'ed_dt_array.npy'
     path = dir_path + filename
     np.save(path, np.arange(int(total_time // dt) +  1) * dt)
 
-    filename = 'ed_Sz_array.npy'
+    filename = 'ed_sz_array.npy'
     path = dir_path + filename
     np.save(path, sz_array)
 

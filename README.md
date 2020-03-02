@@ -43,9 +43,12 @@ L 10 1st order trotter       |  L 10 2nd order trotter
 L 10 1st order trotter       |  L 10 2nd order trotter
 :---------------------------:|:-------------------------:
 ![](figure/XXZ/circuit_L10_g1.0_1st.png)   |  ![](figure/XXZ/circuit_L10_g1.0_2nd.png)
-:---------------------------:|:-------------------------:
 ![](figure/XXZ/scaling_L10_g1.0_1st.png)   |  ![](figure/XXZ/scaling_L10_g1.0_2nd.png)
 
+
+## Quantum Quench
+### TFI g = 0.1
+![](figure/time_evolv_TFI/mps_L11_g0.1_1st.png)
 
 
 ### Single-layer circuit
@@ -68,5 +71,7 @@ Single-layer circuit should match with the result of qTEBD with MPS and DMRG wit
 #### Note
 * Does not seem to work : Iterative optimization for each layer. Optimize first layer and fix first layer. Then add second layer and optimize second layer and so on.
 * Gradient descent for optimizing fedility of qTEBD-MPS gives very small improvement on top of polar decomposition. Gradient descent itself alone does not work.
+
+* In time evolution, polar sweep along the isometry direction fails.
 
 

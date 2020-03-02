@@ -88,6 +88,10 @@ def make_U(H, t):
     return [expm(-t * h.reshape((d**2, -1))).reshape([d] * 4) for h in H]
 
 def init_mps(L, chi, d):
+    '''
+    Return MPS in AAAAAA form, i.e. left canonical form
+    such that \sum A^\dagger A = I
+    '''
     A_list = []
     for i in range(L):
         chi1 = np.min([d**np.min([i,L-i]),chi])
@@ -104,6 +108,7 @@ def init_mps(L, chi, d):
 def polar(A):
     d,chi1,chi2 = A.shape
     Y,D,Z = np.linalg.svd(A.reshape(d*chi1,chi2), full_matrices=False)
+    print(sum(D))
     return np.dot(Y,Z).reshape([d,chi1,chi2])
 
 def random_2site_U(d, factor=1e-2):
@@ -320,6 +325,35 @@ def overlap(psi1,psi2):
     N = np.trace(N)
     return(N)
 
+def expectation_values_1_site(A_list, Op_list, check_norm=True):
+    if check_norm:
+        assert np.isclose(overlap(A_list, A_list), 1.)
+    else:
+        pass
+
+    L = len(A_list)
+    Lp = np.ones([1, 1])
+    Lp_list = [Lp]
+
+    for i in range(L):
+        Lp = np.tensordot(Lp, A_list[i], axes=(0, 1)) # ap i b
+        Lp = np.tensordot(Lp, np.conj(A_list[i]), axes=([0, 1], [1,0])) # b bp
+        Lp_list.append(Lp)
+
+    Rp = np.ones([1, 1])
+
+    Op_per_site = np.zeros([L])
+    for i in range(L - 2, -2, -1):
+        Rp = np.tensordot(np.conj(A_list[i+1]), Rp, axes=(2, 1)) #[p,l,r] [d,u] -> [p,l,d]
+        Op = np.tensordot(Op_list[i+1], Rp, axes=(1, 0)) #[p,q], [q,l,d] -> [p,l,d]
+        Op = np.tensordot(Op, A_list[i+1], axes=([0,2], [0,2])) #[p,ul,d], [p,dl,rr] -> [ul, dl]
+        Op = np.tensordot(Lp_list[i+1], Op, axes=([0,1], [1,0]))
+        Op_per_site[i+1] = Op[None][0]
+
+        Rp = np.tensordot(A_list[i+1],Rp,axes=([0,2], [0,2]))
+
+    return Op_per_site
+
 def expectation_values(A_list, H_list, check_norm=True):
     if check_norm:
         assert np.isclose(overlap(A_list, A_list), 1.)
@@ -349,6 +383,56 @@ def expectation_values(A_list, H_list, check_norm=True):
         E_list.append(E[None][0])
 
     return E_list
+
+def right_canonicalize(A_list):
+    '''
+    Bring mps in right canonical form, assuming the input mps is in
+    left canonical form already.
+    '''
+    L = len(A_list)
+    for i in range(L-1, 0, -1):
+        d1, chi1, chi2 = A_list[i].shape
+        X, Y, Z = np.linalg.svd(np.reshape(np.transpose(A_list[i], [1, 0, 2]), [chi1, d1 * chi2]),
+                                full_matrices=0)
+
+        chi1 = np.sum(Y>10.**(-15))
+
+        arg_sorted_idx = (np.argsort(Y)[::-1])[:chi1]
+        Y = Y[arg_sorted_idx]
+        X = X[: ,arg_sorted_idx]
+        Z = Z[arg_sorted_idx, :]
+
+        A_list[i]   = np.transpose(Z.reshape([chi1, d1, chi2]), [1, 0, 2])
+        R = np.dot(X, np.diag(Y))
+        new_A = np.tensordot(A_list[i-1], R, axes=([2], [0]))  #[p, 1l, (1r)] [(2l), 2r]
+        A_list[i-1] = new_A
+
+    return A_list
+
+def left_canonicalize(A_list):
+    '''
+    Bring mps in left canonical form, assuming the input mps is in
+    right canonical form already.
+    '''
+    L = len(A_list)
+    for i in range(L-1):
+        d1, chi1, chi2 = A_list[i].shape
+        X, Y, Z = np.linalg.svd(np.reshape(A_list[i], [d1 * chi1, chi2]),
+                                full_matrices=0)
+
+        chi2 = np.sum(Y>10.**(-15))
+
+        arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
+        Y = Y[arg_sorted_idx]
+        X = X[: ,arg_sorted_idx]
+        Z = Z[arg_sorted_idx, :]
+
+        A_list[i]   = X.reshape([d1, chi1, chi2])
+        R = np.dot(np.diag(Y), Z)
+        new_A = np.tensordot(R, A_list[i+1], axes=([1], [1]))  #[1l,(1r)],[p, (2l), 2r]
+        A_list[i+1] = np.transpose(new_A, [1, 0, 2])
+
+    return A_list
 
 def apply_U_all(A_list, U_list, cache=False):
     '''
@@ -408,11 +492,21 @@ def apply_U(A_list, U_list, onset):
     L = len(A_list)
 
     Ap_list = [None for i in range(L)]
-    if onset == 1:
-        Ap_list[0] = A_list[0]
-        Ap_list[L-1] = A_list[L-1]
+    if L % 2 == 0:
+        if onset == 1:
+            Ap_list[0] = A_list[0]
+            Ap_list[L-1] = A_list[L-1]
+        else:
+            pass
+    else:
+        if onset == 0:
+            Ap_list[L-1] = A_list[L-1]
+        else:
+            Ap_list[0] = A_list[0]
 
-    for i in range(onset,L-1,2):
+
+    bound = L-1
+    for i in range(onset,bound,2):
         d1,chi1,chi2 = A_list[i].shape
         d2,chi2,chi3 = A_list[i+1].shape
 
@@ -456,9 +550,9 @@ def var_A(A_list, Ap_list, sweep='left'):
 
         A_list_new = [[] for i in range(L)]
         for i in range(L - 1, -1, -1):
-            Rp = np.tensordot(Ap_list[i].conj(),Rp, axes=(2, 1))
-            theta = np.tensordot(Lp_list[i],Rp, axes=(1,1))
-            theta = theta.transpose(1,0,2)
+            Rp = np.tensordot(Ap_list[i].conj(), Rp, axes=(2, 1))  #[1p,1l,(1r)] [2d,(2u)]
+            theta = np.tensordot(Lp_list[i],Rp, axes=(1,1)) #[1d,(1u)], [2p,(2l),2r]
+            theta = theta.transpose(1,0,2)  #[lpr]->[plr]
             A_list_new[i] = polar(theta)
             Rp = np.tensordot(A_list_new[i], Rp, axes=([0,2], [0,2]))
 
@@ -468,7 +562,7 @@ def var_A(A_list, Ap_list, sweep='left'):
         Rp_list = [Rp]
         for idx in range(L-1, -1, -1):
             Rp = np.tensordot(A_list[idx], Rp, axes=(2, 0))
-            Rp = np.tensordot(Rp, Ap_list[idx].conj(), axes=([0, 2], [0, 2]))
+            Rp = np.tensordot(Rp, np.conj(Ap_list[idx]), axes=([0, 2], [0, 2]))
             Rp_list.append(Rp)
 
         Lp = np.ones([1, 1])
@@ -488,143 +582,5 @@ def var_A(A_list, Ap_list, sweep='left'):
     else:
         raise NotImplementedError
 
-
-'''
-    Algorithm:
-        (1.) first call circuit_2_mps to get the list of mps-reprentation of
-        circuit up to each layer.
-        (2.1) collapse imaginary time evolution on layer-n circuit e^(-H) |n> = |psi>
-        (2.2) normalize |psi>
-        (3.) var optimize layer-n by maximizing < psi | U(n) | n-1>
-        (4.) collapse layer-n optimized on |psi> getting new |psi>
-        (5.) var optimize layer-n-1 by maximizing < psi | U(n-1) | n-2 >
-        [ToDo] check the index n above whether is consistent with the code.
-        ...
-'''
-
-if __name__ == "__main__":
-    onp.random.seed(1)
-    np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
-    L = int(sys.argv[1])
-    J = 1.
-    g = float(sys.argv[2])
-    depth = int(sys.argv[3])
-    N_iter = int(sys.argv[4])
-    order = str(sys.argv[5])
-
-    assert order in ['1st', '2nd']
-    Hamiltonian = 'XXZ'
-    H_list  =  get_H(L, J, g, Hamiltonian)
-
-    my_circuit = []
-
-    # delta_list = [np.sum(expectation_values(A_list, H_list))-E_exact.item()]
-    t_list = [0]
-    E_list = []
-    update_error_list = [0.]
-
-    for dep_idx in range(depth):
-        # if dep_idx > 0:
-        #     identity_layer = [np.eye(4).reshape([2, 2, 2, 2]) for i in range(L-1)]
-        #     my_circuit.append(identity_layer)
-        # else:
-        #     random_layer = [random_2site_U(2) for i in range(L-1)]
-        #     my_circuit.append(random_layer)
-        random_layer = [random_2site_U(2) for i in range(L-1)]
-        my_circuit.append(random_layer)
-        current_depth = dep_idx + 1
-
-    mps_of_layer = circuit_2_mps(my_circuit)
-    E_list.append(np.sum(expectation_values(mps_of_layer[-1], H_list)))
-
-    for dt in [0.05,0.01,0.001]:
-        U_list =  make_U(H_list, dt)
-        U_half_list =  make_U(H_list, dt/2.)
-        for i in range(int(40//dt**(0.75))):
-            mps_of_layer = circuit_2_mps(my_circuit)
-            mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
-            # [TODO] remove the assertion below
-            assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-            if order == '2nd':
-                new_mps = apply_U(mps_of_last_layer,  U_half_list, 0)
-                new_mps = apply_U(new_mps, U_list, 1)
-                new_mps = apply_U(new_mps, U_half_list, 0)
-            else:
-                new_mps = apply_U(mps_of_last_layer,  U_list, 0)
-                new_mps = apply_U(new_mps, U_list, 1)
-
-            print("Norm new mps = ", overlap(new_mps, new_mps), "new state aimed E = ",
-                  np.sum(expectation_values(new_mps, H_list, check_norm=False))/overlap(new_mps, new_mps)
-                 )
-            # new_mps is the e(-H)|psi0> which is not normalizaed.
-
-            for iter_idx in range(N_iter):
-                iter_mps = [A.copy() for A in new_mps]
-                for var_dep_idx in range(current_depth, 0, -1):
-                # for var_dep_idx in range(current_depth, current_depth-1, -1):
-                    # circuit is modified inplace
-                    # new mps is returned
-                    iter_mps, new_layer = var_layer([A.copy() for A in iter_mps],
-                                                    my_circuit[var_dep_idx - 1],
-                                                    mps_of_layer[var_dep_idx - 1],
-                                                   )
-                    assert(len(new_layer) == L -1)
-                    my_circuit[var_dep_idx - 1] = new_layer
-
-                mps_of_layer = circuit_2_mps(my_circuit)
-
-            # [Todo] log the fedility here
-            mps_of_layer = circuit_2_mps(my_circuit)
-            mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
-            assert np.isclose(overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-            current_energy = np.sum(expectation_values(mps_of_last_layer, H_list))
-            # delta_list.append(np.sum(expectation_values(mps_of_last_layer, H_list))-E_exact.item())
-            E_list.append(current_energy)
-            t_list.append(t_list[-1]+dt)
-            # print(t_list[-1],delta_list[-1])
-
-            fidelity_reached = np.abs(overlap(new_mps, mps_of_last_layer))**2 / overlap(new_mps, new_mps)
-            print("fidelity reached : ", fidelity_reached)
-            update_error_list.append(1. - fidelity_reached)
-
-
-
-    dir_path = 'data/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
-    filename = 'circuit_depth%d_Niter%d_%s_energy.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(E_list))
-
-    filename = 'circuit_depth%d_Niter%d_%s_dt.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(t_list))
-
-    filename = 'circuit_depth%d_Niter%d_%s_error.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(update_error_list))
-
-    dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
-    best_E = np.amin(E_list)
-    filename = 'circuit_depth%d_Niter%d_%s_energy.csv' % (depth, N_iter, order)
-    path = dir_path + filename
-    # Try to load file 
-    # If data return
-    E_dict = {}
-    overwrite = True
-    try:
-        E_array = misc.load_array(path)
-        E_dict = misc.nparray_2_dict(E_array)
-        assert L in E_dict.keys()
-        print("Found data")
-        if overwrite:
-            raise
-    except Exception as error:
-        print(error)
-        E_dict[L] = best_E
-        misc.save_array(path, misc.dict_2_nparray(E_dict))
-        # If no data --> generate data
-        print("Save new data")
 
 
