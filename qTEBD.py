@@ -444,6 +444,40 @@ def left_canonicalize(A_list):
 
     return A_list
 
+def get_entanglement(A_list):
+    '''
+    Goal:
+        Compute the bibpartite entanglement at each cut.
+    Input:
+        mps in left canonical form
+    Output:
+        list of bipartite entanglement [(0,1...), (01,2...), (012,...)]
+    '''
+    L = len(A_list)
+    copy_A_list = [A.copy() for A in A_list]
+    ent_list = [None] * (L-1)
+    for i in range(L-1, 0, -1):
+        d1, chi1, chi2 = copy_A_list[i].shape
+        X, Y, Z = np.linalg.svd(np.reshape(np.transpose(copy_A_list[i], [1, 0, 2]), [chi1, d1 * chi2]),
+                                full_matrices=0)
+
+        chi1 = np.sum(Y>10.**(-15))
+
+        arg_sorted_idx = (np.argsort(Y)[::-1])[:chi1]
+        Y = Y[arg_sorted_idx]
+        X = X[: ,arg_sorted_idx]
+        Z = Z[arg_sorted_idx, :]
+
+        copy_A_list[i]   = np.transpose(Z.reshape([chi1, d1, chi2]), [1, 0, 2])
+        R = np.dot(X, np.diag(Y))
+        new_A = np.tensordot(copy_A_list[i-1], R, axes=([2], [0]))  #[p, 1l, (1r)] [(2l), 2r]
+        copy_A_list[i-1] = new_A
+
+        bi_ent = -(Y**2).dot(np.log(Y**2))
+        ent_list[i-1] = bi_ent
+
+    return ent_list
+
 def apply_U_all(A_list, U_list, cache=False):
     '''
     if cache is True, we will return a list_A_list,

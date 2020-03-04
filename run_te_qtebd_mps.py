@@ -39,7 +39,7 @@ if __name__ == "__main__":
     ## [TODO] add check whether data already
 
     J = 1.
-    N_iter = 1
+    N_iter = 10
     dt = 0.01
     total_t = 15
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
@@ -50,13 +50,14 @@ if __name__ == "__main__":
     E_list = [np.sum(qTEBD.expectation_values(A_list, H_list))]
     Sz_array = np.zeros([int(total_t // dt) + 1, L], dtype=np.complex)
     Sz_array[0, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
+    ent_array = np.zeros([int(total_t // dt) + 1, L-1], dtype=np.double)
+    ent_array[0, :] = qTEBD.get_entanglement(A_list)
     update_error_list = [0.]
 
     U_list =  qTEBD.make_U(H_list, 1j * dt)
     U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
 
     exact_steps = int(np.log2(chi))
-    exact_steps = 1
     for idx in range(exact_steps):
         A_list = qTEBD.right_canonicalize(A_list)
         A_list = qTEBD.apply_U_all(A_list,  U_list, 0)
@@ -69,6 +70,7 @@ if __name__ == "__main__":
         current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
         E_list.append(current_energy)
         Sz_array[1+idx, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
+        ent_array[1+idx, :] = qTEBD.get_entanglement(A_list)
         t_list.append(t_list[-1]+dt)
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
@@ -88,6 +90,7 @@ if __name__ == "__main__":
             current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
             E_list.append(current_energy)
             Sz_array[idx, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
+            ent_array[idx, :] = qTEBD.get_entanglement(A_list)
             t_list.append(t_list[-1]+dt)
 
             print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
@@ -160,6 +163,7 @@ if __name__ == "__main__":
         current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
         E_list.append(current_energy)
         Sz_array[idx, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
+        ent_array[idx, :] = qTEBD.get_entanglement(A_list)
         t_list.append(t_list[-1]+dt)
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
@@ -183,4 +187,8 @@ if __name__ == "__main__":
     filename = 'mps_chi%d_%s_sz_array.npy' % (chi, order)
     path = dir_path + filename
     np.save(path, Sz_array)
+
+    filename = 'mps_chi%d_%s_ent_array.npy' % (chi, order)
+    path = dir_path + filename
+    np.save(path, ent_array)
 
