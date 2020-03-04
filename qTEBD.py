@@ -12,6 +12,7 @@ import sys
 ## function with @jit, then autograd should be fine.
 
 try:
+    raise
     # import jax.numpy as np
     import autograd.numpy as np
     from autograd import grad
@@ -21,6 +22,7 @@ try:
     # config.update("jax_enable_x64", True)
 except:
     import numpy as np
+    np.seterr(all='raise')
     print("some function may be broken")
 
 import numpy as onp
@@ -271,15 +273,23 @@ def var_gate(new_mps, site, mps_cache):
     # M_copy = M_copy[:, 0, :, :]
     # U, _, Vd = np.linalg.svd(M_copy.reshape([2, 4]), full_matrices=False)
     # new_gate = np.dot(U, Vd).reshape([2, 2, 2])
-    # new_gate_ = onp.random.rand(2, 2, 2, 2)
+    # new_gate_ = onp.random.rand(2, 2, 2, 2) * (1+0j)
     # new_gate_[:, 0, :, :] = new_gate
-    # return new_gate_
+    # # return new_gate_
 
     # new_gate = polar(M)
+    # We are maximizing Re[\sum_ij A_ij W_ij ] with W^\dagger W = I
+    # Re[\sum_ij A_ij W_ij] = Re Tr[ WA^T], A=USV^dagger, A^T = V*SU^T
+    # W = (UV^\dagger)* = U* V^T   gives optimal results.
+    # Re Tr[ WA^T] = Tr[S]
     U, _, Vd = np.linalg.svd(M, full_matrices=False)
-    new_gate = np.dot(U, Vd)
-    # new_gate = np.dot(Vd.T.conjugate(), U.T.conjugate())
+    new_gate = np.dot(U, Vd).conj()
     new_gate = new_gate.reshape([2, 2, 2, 2])
+
+    # try:
+    #     assert( np.isclose(np.linalg.norm(new_gate_[:,0,:,:]-new_gate[:,0,:,:]), 0.))
+    # except:
+    #     import pdb;pdb.set_trace()
 
     return new_gate
 
@@ -342,7 +352,7 @@ def expectation_values_1_site(A_list, Op_list, check_norm=True):
 
     Rp = np.ones([1, 1])
 
-    Op_per_site = np.zeros([L])
+    Op_per_site = np.zeros([L], dtype=np.complex)
     for i in range(L - 2, -2, -1):
         Rp = np.tensordot(np.conj(A_list[i+1]), Rp, axes=(2, 1)) #[p,l,r] [d,u] -> [p,l,d]
         Op = np.tensordot(Op_list[i+1], Rp, axes=(1, 0)) #[p,q], [q,l,d] -> [p,l,d]
@@ -536,14 +546,22 @@ def apply_U(A_list, U_list, onset):
     return Ap_list
 
 def var_A(A_list, Ap_list, sweep='left'):
+    '''
+    ______________ Ap_list = (U|psi>)^\dagger
+    |  |  |  |  |
+
+    |  |  |  |  |
+    -------------- A_list  = | phi >
+    '''
     L = len(A_list)
+    # dtype = A_list[0].dtype
     if sweep == 'left':
         Lp = np.ones([1, 1])
         Lp_list = [Lp]
 
         for i in range(L):
-            Lp = np.tensordot(Lp, A_list[i], axes=(0, 1))
-            Lp = np.tensordot(Lp, Ap_list[i].conj(), axes=([0, 1], [1,0]))
+            Lp = np.tensordot(Lp, A_list[i], axes=(0, 1))  #[(1d),1u], [2p,(2l),2r]
+            Lp = np.tensordot(Lp, np.conj(Ap_list[i]), axes=([0, 1], [1,0])) #[(1u),(1p),1r], [(2p),(2l),2r]
             Lp_list.append(Lp)
 
         Rp = np.ones([1, 1])
@@ -553,7 +571,7 @@ def var_A(A_list, Ap_list, sweep='left'):
             Rp = np.tensordot(Ap_list[i].conj(), Rp, axes=(2, 1))  #[1p,1l,(1r)] [2d,(2u)]
             theta = np.tensordot(Lp_list[i],Rp, axes=(1,1)) #[1d,(1u)], [2p,(2l),2r]
             theta = theta.transpose(1,0,2)  #[lpr]->[plr]
-            A_list_new[i] = polar(theta)
+            A_list_new[i] = polar(theta).conj()
             Rp = np.tensordot(A_list_new[i], Rp, axes=([0,2], [0,2]))
 
         return A_list_new
@@ -571,7 +589,7 @@ def var_A(A_list, Ap_list, sweep='left'):
             Lp = np.tensordot(Lp, Ap_list[idx].conj(), axes=(1, 1))
             theta = np.tensordot(Lp, Rp_list[L-1-idx], axes=([2], [1]))
             theta = np.transpose(theta, [1,0,2])
-            A_list_new[idx] = polar(theta)
+            A_list_new[idx] = polar(theta).conj()
             ## d,ci1,chi2 = theta.shape
             ## Y,D,Z = np.linalg.svd(theta.reshape(d*chi1,chi2), full_matrices=False)
             ## A_list_new[idx] = np.dot(Y,Z).reshape([d,chi1,chi2])
