@@ -41,14 +41,14 @@ if __name__ == "__main__":
     J = 1.
     N_iter = 1
     dt = 0.01
-    total_t = 3
+    total_t = 15
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
     H_list =  qTEBD.get_H(L, J, g, Hamiltonian)
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
 
     t_list = [0]
     E_list = [np.sum(qTEBD.expectation_values(A_list, H_list))]
-    Sz_array = np.zeros([int(total_t // dt) + 1, L])
+    Sz_array = np.zeros([int(total_t // dt) + 1, L], dtype=np.complex)
     Sz_array[0, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
     update_error_list = [0.]
 
@@ -74,29 +74,25 @@ if __name__ == "__main__":
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
 
     for idx in range(1+exact_steps, int(total_t//dt) + 1):
-        if fidelity_reached < 1. - 1e-3 and A_list[L//2].shape[1] < chi:
+        if fidelity_reached < 1. - 1e-6 and A_list[L//2].shape[1] < chi:
+            ### AAAAA form
             A_list = qTEBD.right_canonicalize(A_list)
-            A_list = qTEBD.apply_U_all(A_list, [np.eye(4).reshape([2]*4)]*(L-1), 0)
-            # ### AAAAA form
-            # A_list = qTEBD.right_canonicalize(A_list)
-            # ### BBBBB form
-            # A_list = qTEBD.apply_U_all(A_list,  U_list, 0)
-            # ### AAAAA form
-            # # for a in range(10):
-            # #     A_list  = qTEBD.var_A(A_list, Ap_list, 'right')
+            ### BBBBB form
+            A_list = qTEBD.apply_U_all(A_list,  U_list, 0)
+            ### AAAAA form
 
-            # ## [ToDo] here assume no truncation
-            # fidelity_reached = 1.
-            # print("fidelity reached : ", fidelity_reached)
-            # update_error_list.append(1. - fidelity_reached)
-            # current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
-            # E_list.append(current_energy)
-            # Sz_array[idx, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
-            # t_list.append(t_list[-1]+dt)
+            ## [ToDo] here assume no truncation
+            fidelity_reached = 1.
+            print("fidelity reached : ", fidelity_reached)
+            update_error_list.append(1. - fidelity_reached)
+            current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
+            E_list.append(current_energy)
+            Sz_array[idx, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
+            t_list.append(t_list[-1]+dt)
 
-            # print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
+            print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
             # N_iter = 10
-            # continue
+            continue
 
         if order == '2nd':
             Ap_list = qTEBD.apply_U(A_list, U_half_list, 0)
@@ -115,8 +111,8 @@ if __name__ == "__main__":
         fidelity_before = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / qTEBD.overlap(Ap_list, Ap_list)
         print("fidelity before : ", fidelity_before)
         for a in range(N_iter):
-            # A_list  = qTEBD.var_A(A_list, Ap_list, 'left')
-            A_list  = qTEBD.var_A(A_list, Ap_list, 'right')
+            A_list  = qTEBD.var_A(A_list, Ap_list, 'left')
+            # A_list  = qTEBD.var_A(A_list, Ap_list, 'right')
 
 
         # else:

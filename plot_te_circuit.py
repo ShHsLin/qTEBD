@@ -19,11 +19,14 @@ if __name__ == '__main__':
     exact_dt = np.load(dir_path + filename)
 
     ax1 = plt.subplot(211)
-    plt.plot(exact_dt[:30], exact_sz[:30,L//2],'.--k', label='exact')
+    plt.plot(exact_dt[:], exact_sz[:,L//2],'--k', label='exact')
     plt.setp(ax1.get_xticklabels(), fontsize=6)
     plt.ylabel('$< S_z^{L/2} >$')
 
-    for depth, N_iter in [(1, 1), (1, 2), (1, 10)]:
+    ## dd = 4
+    for depth, N_iter in [(2, 100), (3, 100), (4, 100)]:
+    # N_iter = 20
+    # for depth in range(3,8):
         dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
         filename = 'circuit_depth%d_Niter%d_%s_sz_array.npy' % (depth, N_iter, order)
         path = dir_path + filename
@@ -46,7 +49,7 @@ if __name__ == '__main__':
 
 
         ax1 = plt.subplot(211)
-        plt.plot(t_list, circuit_sz[:,L//2], '.', label='$depth=%d, Niter=%d$' % (depth, N_iter))
+        plt.plot(t_list, circuit_sz[:,L//2], '-', label='$depth=%d, Niter=%d$' % (depth, N_iter))
         plt.setp(ax1.get_xticklabels(), fontsize=6)
 
 

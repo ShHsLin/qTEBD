@@ -49,7 +49,7 @@ if __name__ == "__main__":
                    [1., 0.]])
     ####### Evolve state #########
     psi = init_state
-    dt = 0.1
+    dt = 0.01
     total_time = 30.
     sz_array = np.zeros([int(total_time // dt) + 1, L])
     for site in range(L):

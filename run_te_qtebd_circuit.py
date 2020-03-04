@@ -26,7 +26,7 @@ if __name__ == "__main__":
     depth = int(sys.argv[3])
     N_iter = int(sys.argv[4])
     order = str(sys.argv[5])
-    total_t = 3.
+    total_t = 15.
 
     assert order in ['1st', '2nd']
     Hamiltonian = 'TFI'
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     E_list = []
     update_error_list = [0.]
     dt = 0.01
-    Sz_array = np.zeros([int(total_t // dt) + 1, L])
+    Sz_array = np.zeros([int(total_t // dt) + 1, L], dtype=np.complex)
 
     for dep_idx in range(depth):
         # if dep_idx > 0:
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
         # random_layer = [qTEBD.random_2site_U(2) for i in range(L-1)]
         # my_circuit.append(random_layer)
-        identity_layer = [np.eye(4).reshape([2, 2, 2, 2]) for i in range(L-1)]
+        identity_layer = [np.eye(4, dtype=np.complex).reshape([2, 2, 2, 2]) for i in range(L-1)]
         my_circuit.append(identity_layer)
         current_depth = dep_idx + 1
 
@@ -79,6 +79,9 @@ if __name__ == "__main__":
               np.sum(qTEBD.expectation_values(new_mps, H_list, check_norm=False))/qTEBD.overlap(new_mps, new_mps)
              )
         # new_mps is the e(-H)|psi0> which is not normalizaed.
+        if idx == 1:
+            my_circuit[0] = [U.copy() for U in U_list]
+
 
         for iter_idx in range(N_iter):
             iter_mps = [A.copy() for A in new_mps]
