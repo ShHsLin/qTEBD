@@ -39,12 +39,12 @@ if __name__ == "__main__":
     ## [TODO] add check whether data already
 
     J = 1.
-    tol = 1e-8
-    cov_crit = 1e-9
+    tol = 1e-10
+    cov_crit = tol * 0.1
     max_N_iter = 100
     N_iter = 10
     dt = 0.01
-    total_t = 10
+    total_t = 30
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
     H_list =  qTEBD.get_H(L, J, g, Hamiltonian)
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
@@ -62,9 +62,9 @@ if __name__ == "__main__":
 
     exact_steps = int(np.log2(chi))
     for idx in range(exact_steps):
-        A_list = qTEBD.right_canonicalize(A_list)
-        A_list = qTEBD.apply_U_all(A_list,  U_list, 0)
-        A_list = qTEBD.left_canonicalize(A_list)
+        A_list = qTEBD.right_canonicalize(A_list, no_trunc=True)
+        A_list = qTEBD.apply_U_all(A_list,  U_list, 0, no_trunc=True)
+        A_list = qTEBD.left_canonicalize(A_list, no_trunc=True)
 
         ## [ToDo] here assume no truncation
         fidelity_reached = 1.
@@ -77,9 +77,10 @@ if __name__ == "__main__":
         t_list.append(t_list[-1]+dt)
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
+        print("current chi : ", A_list[L//2].shape[1])
 
     for idx in range(1+exact_steps, int(total_t//dt) + 1):
-        if fidelity_reached < 1. - 1e-6 and A_list[L//2].shape[1] < chi:
+        if fidelity_reached < 1. - 1e-12 and A_list[L//2].shape[1] < chi:
             ### AAAAA form
             A_list = qTEBD.right_canonicalize(A_list)
             ### BBBBB form

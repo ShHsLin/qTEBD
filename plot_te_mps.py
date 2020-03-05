@@ -23,7 +23,7 @@ if __name__ == '__main__':
     plt.setp(ax1.get_xticklabels(), fontsize=6)
     plt.ylabel('$< S_z^{L/2} >$')
 
-    for chi in [2, 4, 8]:
+    for chi in [2, 4, 8, 16]:
         dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
 
         filename = 'mps_chi%d_%s_energy.npy' % (chi, order)

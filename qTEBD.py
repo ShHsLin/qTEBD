@@ -394,7 +394,7 @@ def expectation_values(A_list, H_list, check_norm=True):
 
     return E_list
 
-def right_canonicalize(A_list):
+def right_canonicalize(A_list, no_trunc=False):
     '''
     Bring mps in right canonical form, assuming the input mps is in
     left canonical form already.
@@ -405,7 +405,10 @@ def right_canonicalize(A_list):
         X, Y, Z = np.linalg.svd(np.reshape(np.transpose(A_list[i], [1, 0, 2]), [chi1, d1 * chi2]),
                                 full_matrices=0)
 
-        chi1 = np.sum(Y>10.**(-15))
+        if no_trunc:
+            chi1 = np.size(Y)
+        else:
+            chi1 = np.sum(Y>10.**(-15))
 
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi1]
         Y = Y[arg_sorted_idx]
@@ -419,7 +422,7 @@ def right_canonicalize(A_list):
 
     return A_list
 
-def left_canonicalize(A_list):
+def left_canonicalize(A_list, no_trunc=False):
     '''
     Bring mps in left canonical form, assuming the input mps is in
     right canonical form already.
@@ -430,7 +433,10 @@ def left_canonicalize(A_list):
         X, Y, Z = np.linalg.svd(np.reshape(A_list[i], [d1 * chi1, chi2]),
                                 full_matrices=0)
 
-        chi2 = np.sum(Y>10.**(-15))
+        if no_trunc:
+            chi2 = np.size(Y)
+        else:
+            chi2 = np.sum(Y>10.**(-15))
 
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
         Y = Y[arg_sorted_idx]
@@ -478,7 +484,7 @@ def get_entanglement(A_list):
 
     return ent_list
 
-def apply_U_all(A_list, U_list, cache=False):
+def apply_U_all(A_list, U_list, cache=False, no_trunc=False):
     '''
     if cache is True, we will return a list_A_list,
     which gives the list of mps of length L, which corresponds to
@@ -499,7 +505,11 @@ def apply_U_all(A_list, U_list, cache=False):
         theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
         X, Y, Z = np.linalg.svd(theta, full_matrices=0)
-        chi2 = np.sum(Y>10.**(-15))
+
+        if no_trunc:
+            chi2 = np.size(Y)
+        else:
+            chi2 = np.sum(Y>10.**(-15))
 
         # piv = np.zeros(len(Y), onp.bool)
         # piv[(np.argsort(Y)[::-1])[:chi2]] = True
