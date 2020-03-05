@@ -608,7 +608,8 @@ def var_A(A_list, Ap_list, sweep='left'):
             A_list_new[i] = polar(theta).conj()
             Rp = np.tensordot(A_list_new[i], Rp, axes=([0,2], [0,2]))
 
-        return A_list_new
+        final_overlap = np.einsum('ijk,ijk->', A_list_new[0], theta)
+        return A_list_new, final_overlap
     elif sweep == 'right':
         Rp = np.ones([1, 1])
         Rp_list = [Rp]
@@ -630,7 +631,8 @@ def var_A(A_list, Ap_list, sweep='left'):
             # print("overlap : ", np.einsum('ijk,ijk->', theta, polar(theta).conj()))
             Lp = np.tensordot(A_list_new[idx], Lp, axes=([0, 1], [1, 0]))
 
-        return A_list_new
+        final_overlap = np.einsum('ijk,ijk->', A_list_new[L-1], theta)
+        return A_list_new, final_overlap
     else:
         raise NotImplementedError
 

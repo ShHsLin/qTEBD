@@ -39,9 +39,12 @@ if __name__ == "__main__":
     ## [TODO] add check whether data already
 
     J = 1.
+    tol = 1e-8
+    cov_crit = 1e-9
+    max_N_iter = 100
     N_iter = 10
     dt = 0.01
-    total_t = 15
+    total_t = 10
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
     H_list =  qTEBD.get_H(L, J, g, Hamiltonian)
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
@@ -111,11 +114,24 @@ if __name__ == "__main__":
         #      )
 
         ### POLAR DECOMPOSITION UPDATE ###
-        fidelity_before = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / qTEBD.overlap(Ap_list, Ap_list)
+        Ap_norm_sq = qTEBD.overlap(Ap_list, Ap_list)
+        fidelity_before = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / Ap_norm_sq
         print("fidelity before : ", fidelity_before)
-        for a in range(N_iter):
-            A_list  = qTEBD.var_A(A_list, Ap_list, 'left')
-            # A_list  = qTEBD.var_A(A_list, Ap_list, 'right')
+
+        A_list, overlap  = qTEBD.var_A(A_list, Ap_list, 'left')
+        F = np.abs(overlap) ** 2 / Ap_norm_sq
+        num_iter = 0
+        F_diff = 1
+        while ( num_iter < max_N_iter and 1-F > tol and F_diff > cov_crit):
+            num_iter = num_iter + 1
+            print("sweeping right")
+            A_list, overlap  = qTEBD.var_A(A_list, Ap_list, 'right')
+            print("sweeping left")
+            A_list, overlap  = qTEBD.var_A(A_list, Ap_list, 'left')
+            new_F = np.abs(overlap) ** 2 / Ap_norm_sq
+            F_diff = np.abs(new_F - F)
+            F = new_F
+            print(" F = ", F)
 
 
         # else:
@@ -135,7 +151,7 @@ if __name__ == "__main__":
         #             # A_list[idx_2] = A_list[idx_2] + dt * grad_A_list[idx_2]
 
         #     for a in range(N_iter):
-        #         A_list  = qTEBD.var_A(A_list, A_list, 'right')
+        #         A_list, overlap  = qTEBD.var_A(A_list, A_list, 'right')
 
         # ############################################
         # ### Hamiltonian expectation minimization ###
@@ -155,7 +171,7 @@ if __name__ == "__main__":
         # #         # A_list[idx_2] = A_list[idx_2] + dt * grad_A_list[idx_2]
 
         # #     for a in range(N_iter):
-        # #         A_list  = qTEBD.var_A(A_list, A_list, 'right')
+        # #         A_list, overlap  = qTEBD.var_A(A_list, A_list, 'right')
 
         fidelity_reached = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / qTEBD.overlap(Ap_list, Ap_list)
         print("fidelity reached : ", fidelity_reached)

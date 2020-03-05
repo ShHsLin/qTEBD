@@ -50,7 +50,7 @@ L 10 1st order trotter       |  L 10 2nd order trotter
 ### TFI g = 0.1
 MPS       |  Circuit
 :---------------------------:|:-------------------------:
-![](figure/time_evolv_TFI/mps_L11_g0.1_1st.png)  |  ![](figure/time_evolv_TFI/circuit_L11_g0.1_1st.png)
+![](figure/time_evolv_TFI/mps_L11_g0.1_2nd.png)  |  ![](figure/time_evolv_TFI/circuit_L11_g0.1_1st.png)
 
 
 ### Single-layer circuit
