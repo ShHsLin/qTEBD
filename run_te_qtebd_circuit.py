@@ -24,83 +24,90 @@ if __name__ == "__main__":
     J = 1.
     g = float(sys.argv[2])
     depth = int(sys.argv[3])
-    N_iter = int(sys.argv[4])
+    max_N_iter = int(sys.argv[4])
     order = str(sys.argv[5])
     total_t = 15.
+    dt = 0.01
+    tol = 1e-8
+    cov_crit = tol * 0.1
+    # max_N_iter = 200
 
     assert order in ['1st', '2nd']
     Hamiltonian = 'TFI'
     H_list  =  qTEBD.get_H(L, J, g, Hamiltonian)
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
 
+    U_list =  qTEBD.make_U(H_list, 1j * dt)
+    U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
 
     my_circuit = []
-
     t_list = [0]
     E_list = []
     update_error_list = [0.]
-    dt = 0.01
     Sz_array = np.zeros([int(total_t // dt) + 1, L], dtype=np.complex)
 
     for dep_idx in range(depth):
-        # if dep_idx > 0:
-        #     identity_layer = [np.eye(4).reshape([2, 2, 2, 2]) for i in range(L-1)]
-        #     my_circuit.append(identity_layer)
-        # else:
-        #     random_layer = [qTEBD.random_2site_U(2) for i in range(L-1)]
-        #     my_circuit.append(random_layer)
-
-        # random_layer = [qTEBD.random_2site_U(2) for i in range(L-1)]
-        # my_circuit.append(random_layer)
         identity_layer = [np.eye(4, dtype=np.complex).reshape([2, 2, 2, 2]) for i in range(L-1)]
         my_circuit.append(identity_layer)
         current_depth = dep_idx + 1
 
-    mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
+    mps_of_layer, full_cache = qTEBD.circuit_2_mps(my_circuit)
+    mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+
     E_list.append(np.sum(qTEBD.expectation_values(mps_of_layer[-1], H_list)))
     Sz_array[0, :] = qTEBD.expectation_values_1_site(mps_of_layer[-1], Sz_list)
 
-    U_list =  qTEBD.make_U(H_list, 1j * dt)
-    U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
     for idx in range(1, int(total_t // dt) + 1):
-        mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
-        mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
         # [TODO] remove the assertion below
         assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
         if order == '2nd':
-            new_mps = qTEBD.apply_U(mps_of_last_layer,  U_half_list, 0)
-            new_mps = qTEBD.apply_U(new_mps, U_list, 1)
-            new_mps = qTEBD.apply_U(new_mps, U_half_list, 0)
+            target_mps = qTEBD.apply_U(mps_of_last_layer,  U_half_list, 0)
+            target_mps = qTEBD.apply_U(target_mps, U_list, 1)
+            target_mps = qTEBD.apply_U(target_mps, U_half_list, 0)
         else:
-            new_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
-            new_mps = qTEBD.apply_U(new_mps, U_list, 1)
+            target_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
+            target_mps = qTEBD.apply_U(target_mps, U_list, 1)
 
-        print("Norm new mps = ", qTEBD.overlap(new_mps, new_mps), "new state aimed E = ",
-              np.sum(qTEBD.expectation_values(new_mps, H_list, check_norm=False))/qTEBD.overlap(new_mps, new_mps)
-             )
-        # new_mps is the e(-H)|psi0> which is not normalizaed.
         if idx == 1:
             my_circuit[0] = [U.copy() for U in U_list]
+            continue
 
 
-        for iter_idx in range(N_iter):
-            iter_mps = [A.copy() for A in new_mps]
-            for var_dep_idx in range(current_depth, 0, -1):
-            # for var_dep_idx in range(current_depth, current_depth-1, -1):
-                # circuit is modified inplace
-                # new mps is returned
-                iter_mps, new_layer = qTEBD.var_layer([A.copy() for A in iter_mps],
-                                                      my_circuit[var_dep_idx - 1],
-                                                      mps_of_layer[var_dep_idx - 1],
-                                                     )
-                assert(len(new_layer) == L -1)
-                my_circuit[var_dep_idx - 1] = new_layer
+        # target_mps is the e(-H)|psi0> which is not normalizaed.
+        target_mps_norm_sq = qTEBD.overlap(target_mps, target_mps)
+        overlap = qTEBD.overlap(mps_of_last_layer, target_mps)
+        F = np.abs(overlap) ** 2 / target_mps_norm_sq
 
-            mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
+        print("Norm new mps = ", target_mps_norm_sq,
+              "new state aimed E = ",
+              np.sum(qTEBD.expectation_values(target_mps, H_list, check_norm=False))/qTEBD.overlap(target_mps, target_mps),
+              " fidelity_before_opt= ", F
+             )
 
-        # [Todo] log the fedility here
-        mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
-        mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+        ###################################
+        #### DO one full iteration here  ##
+        ###################################
+        mps_of_last_layer, full_cache, my_circuit = qTEBD.var_circuit(target_mps, full_cache, my_circuit)
+        overlap = qTEBD.overlap(mps_of_last_layer, target_mps)
+        F = np.abs(overlap) ** 2 / target_mps_norm_sq
+        ###################################
+
+        num_iter = 0
+        F_diff = 1
+        while (num_iter < max_N_iter and 1-F > tol and F_diff > cov_crit):
+            num_iter = num_iter + 1
+            iter_mps = [A.copy() for A in target_mps]
+            mps_of_last_layer, full_cache, my_circuit = qTEBD.var_circuit(target_mps, full_cache, my_circuit)
+            overlap = qTEBD.overlap(mps_of_last_layer, target_mps)
+            # overlap
+            new_F = np.abs(overlap) ** 2 / target_mps_norm_sq
+            F_diff = np.abs(new_F - F)
+            F = new_F
+            print(" at iter = ", num_iter, " F = ", F)
+            # mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
+
+        # mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
+        # mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
         assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
         current_energy = np.sum(qTEBD.expectation_values(mps_of_last_layer, H_list))
         E_list.append(current_energy)
@@ -109,7 +116,7 @@ if __name__ == "__main__":
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
 
-        fidelity_reached = np.abs(qTEBD.overlap(new_mps, mps_of_last_layer))**2 / qTEBD.overlap(new_mps, new_mps)
+        fidelity_reached = np.abs(qTEBD.overlap(target_mps, mps_of_last_layer))**2 / qTEBD.overlap(target_mps, target_mps)
         print("fidelity reached : ", fidelity_reached)
         update_error_list.append(1. - fidelity_reached)
 

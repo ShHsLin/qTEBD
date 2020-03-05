@@ -156,14 +156,68 @@ def circuit_2_mps(circuit, chi=None):
     mps_of_layer.append([A.copy() for A in A_list])
     # A_list is modified inplace always.
     # so we always have to copy A tensors.
+    full_cache = []
     for dep_idx in range(depth):
         U_list = circuit[dep_idx]
-        A_list = apply_U_all(A_list, U_list)
+        ### A_list is modified inplace
+        list_of_A_list = apply_U_all(A_list, U_list, cache=True)
         mps_of_layer.append([A.copy() for A in A_list])
+        full_cache.append(list_of_A_list)
 
-    return mps_of_layer
+    return mps_of_layer, full_cache
 
-def var_layer(new_mps, layer_gate, mps_old):
+def var_circuit(target_mps, all_cache, circuit):
+    '''
+    Goal:
+        Do a sweep from top of the circuit down to product state,
+        and do a sweep from bottom of the circuit to top.
+    Input:
+        target_mps: can be not normalized.
+        all_cache: all mps representations of the intermediate contractions.
+        circuit
+    Output:
+        mps_final: the mps representation of the updated circuit
+        all_cache: all mps representations of the intermediate contractions
+            of the newly updated circuit.
+        circuit
+    '''
+    current_depth = len(circuit)
+    L = len(circuit[0]) + 1
+    iter_mps = [A.copy() for A in target_mps]
+    print("Sweeping from top to bottom")
+    for var_dep_idx in range(current_depth, 0, -1):
+        # circuit is modified inplace
+        # new mps is returned
+        iter_mps, new_layer = var_layer([A.copy() for A in iter_mps],
+                                        circuit[var_dep_idx - 1],
+                                        all_cache[var_dep_idx - 1][0],
+                                        all_cache[var_dep_idx - 1]
+                                       )
+        assert(len(new_layer) == L -1)
+        circuit[var_dep_idx - 1] = new_layer
+
+    print("Sweeping from bottom to top")
+    top_mps = iter_mps
+    bottom_mps = all_cache[0][0]
+    for var_dep_idx in range(0, current_depth):
+        all_cache[var_dep_idx][0] = bottom_mps
+        for idx in range(L-1):
+            gate = circuit[var_dep_idx][idx]
+            apply_gate(top_mps, gate, idx)
+            ## This remove the gate from top_mps
+
+            new_gate = var_gate(top_mps, idx, bottom_mps)
+            circuit[var_dep_idx][idx] = new_gate
+
+            apply_gate(bottom_mps, new_gate, idx)
+            all_cache[var_dep_idx][idx+1] = bottom_mps
+
+    ## finish sweeping
+    ## bottom_mps is mps_final
+    return bottom_mps, all_cache, circuit
+
+
+def var_layer(new_mps, layer_gate, mps_old, list_of_A_list=None):
     '''
     max
     <new_mps | layer_gate | mps_old>
@@ -208,9 +262,12 @@ def var_layer(new_mps, layer_gate, mps_old):
 
     '''
     L = len(layer_gate) + 1
-    list_of_A_list = apply_U_all([t.copy() for t in mps_old],
-                                 layer_gate,
-                                 cache=True)
+    if list_of_A_list is None:
+        list_of_A_list = apply_U_all([t.copy() for t in mps_old],
+                                     layer_gate,
+                                     cache=True)
+    else:
+        pass
     # we copy the tensor in mps_old, so that mps_old is not modified.
     # [Notice] apply_U_all function modified the A_list inplace.
     # [Todo] maybe change the behavior above. not inplace?
