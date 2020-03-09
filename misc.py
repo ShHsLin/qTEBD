@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg
 
 def nparray_2_dict(A_array):
     A_dict = {int(row[0]) : row[1] for row in A_array}
@@ -20,3 +21,15 @@ def load_array(path):
 def save_array(path, A_array):
     np.savetxt(path, A_array, delimiter=',', fmt='%d, %.16e' )
 
+def svd(theta, compute_uv=True, full_matrices=True):
+    """SVD with gesvd backup"""
+    try:
+        return scipy.linalg.svd(theta,
+                                compute_uv=compute_uv,
+                                full_matrices=full_matrices)
+    except:
+        print("*gesvd*")
+        return scipy.linalg.svd(theta,
+                                compute_uv=compute_uv,
+                                full_matrices=full_matrices,
+                                lapack_driver='gesvd')

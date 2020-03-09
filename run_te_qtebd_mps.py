@@ -39,7 +39,7 @@ if __name__ == "__main__":
     ## [TODO] add check whether data already
 
     J = 1.
-    tol = 1e-10
+    tol = 1e-14
     cov_crit = tol * 0.1
     max_N_iter = 100
     N_iter = 10
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         F = np.abs(overlap) ** 2 / Ap_norm_sq
         num_iter = 0
         F_diff = 1
-        while ( num_iter < max_N_iter and 1-F > tol and F_diff > cov_crit):
+        while ( num_iter < max_N_iter and np.abs(1-F) > tol and F_diff > cov_crit):
             num_iter = num_iter + 1
             print("sweeping right")
             A_list, overlap  = qTEBD.var_A(A_list, Ap_list, 'right')
@@ -132,7 +132,7 @@ if __name__ == "__main__":
             new_F = np.abs(overlap) ** 2 / Ap_norm_sq
             F_diff = np.abs(new_F - F)
             F = new_F
-            print(" F = ", F)
+            print(" F = ", F, "F_diff", F_diff)
 
 
         # else:

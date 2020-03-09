@@ -24,13 +24,13 @@ if __name__ == "__main__":
     J = 1.
     g = float(sys.argv[2])
     depth = int(sys.argv[3])
-    max_N_iter = int(sys.argv[4])
+    N_iter = int(sys.argv[4])
     order = str(sys.argv[5])
-    total_t = 15.
+    total_t = 30.
     dt = 0.01
     tol = 1e-8
     cov_crit = tol * 0.1
-    # max_N_iter = 200
+    max_N_iter = N_iter
 
     assert order in ['1st', '2nd']
     Hamiltonian = 'TFI'
@@ -45,17 +45,22 @@ if __name__ == "__main__":
     E_list = []
     update_error_list = [0.]
     Sz_array = np.zeros([int(total_t // dt) + 1, L], dtype=np.complex)
+    ent_array = np.zeros([int(total_t // dt) + 1, L-1], dtype=np.double)
 
+
+    ################# INITIALIZATION  ######################
+    product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
     for dep_idx in range(depth):
         identity_layer = [np.eye(4, dtype=np.complex).reshape([2, 2, 2, 2]) for i in range(L-1)]
         my_circuit.append(identity_layer)
         current_depth = dep_idx + 1
 
-    mps_of_layer, full_cache = qTEBD.circuit_2_mps(my_circuit)
+    mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
     mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
 
     E_list.append(np.sum(qTEBD.expectation_values(mps_of_layer[-1], H_list)))
     Sz_array[0, :] = qTEBD.expectation_values_1_site(mps_of_layer[-1], Sz_list)
+    ent_array[0, :] = qTEBD.get_entanglement(mps_of_last_layer)
 
     for idx in range(1, int(total_t // dt) + 1):
         # [TODO] remove the assertion below
@@ -68,10 +73,10 @@ if __name__ == "__main__":
             target_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
             target_mps = qTEBD.apply_U(target_mps, U_list, 1)
 
-        if idx == 1:
-            my_circuit[0] = [U.copy() for U in U_list]
-            continue
-
+        # if idx == 1:
+        #     my_circuit[0] = [U.copy() for U in U_list]
+        #     continue
+        # else:
 
         # target_mps is the e(-H)|psi0> which is not normalizaed.
         target_mps_norm_sq = qTEBD.overlap(target_mps, target_mps)
@@ -87,7 +92,8 @@ if __name__ == "__main__":
         ###################################
         #### DO one full iteration here  ##
         ###################################
-        mps_of_last_layer, full_cache, my_circuit = qTEBD.var_circuit(target_mps, full_cache, my_circuit)
+        mps_of_last_layer, my_circuit, product_state = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+                                                                         my_circuit, product_state)
         overlap = qTEBD.overlap(mps_of_last_layer, target_mps)
         F = np.abs(overlap) ** 2 / target_mps_norm_sq
         ###################################
@@ -97,21 +103,20 @@ if __name__ == "__main__":
         while (num_iter < max_N_iter and 1-F > tol and F_diff > cov_crit):
             num_iter = num_iter + 1
             iter_mps = [A.copy() for A in target_mps]
-            mps_of_last_layer, full_cache, my_circuit = qTEBD.var_circuit(target_mps, full_cache, my_circuit)
+            mps_of_last_layer, my_circuit, product_state = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+                                                                             my_circuit, product_state)
             overlap = qTEBD.overlap(mps_of_last_layer, target_mps)
             # overlap
             new_F = np.abs(overlap) ** 2 / target_mps_norm_sq
             F_diff = np.abs(new_F - F)
             F = new_F
             print(" at iter = ", num_iter, " F = ", F)
-            # mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
 
-        # mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
-        # mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
         assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
         current_energy = np.sum(qTEBD.expectation_values(mps_of_last_layer, H_list))
         E_list.append(current_energy)
         Sz_array[idx, :] = qTEBD.expectation_values_1_site(mps_of_last_layer, Sz_list)
+        ent_array[idx, :] = qTEBD.get_entanglement(mps_of_last_layer)
         t_list.append(t_list[-1]+dt)
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
@@ -140,4 +145,8 @@ if __name__ == "__main__":
     filename = 'circuit_depth%d_Niter%d_%s_sz_array.npy' % (depth, N_iter, order)
     path = dir_path + filename
     np.save(path, Sz_array)
+
+    filename = 'circuit_depth%d_Niter%d_%s_ent_array.npy' % (depth, N_iter, order)
+    path = dir_path + filename
+    np.save(path, ent_array)
 
