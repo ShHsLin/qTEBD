@@ -63,7 +63,7 @@ if __name__ == "__main__":
     exact_steps = int(np.log2(chi))
     for idx in range(exact_steps):
         A_list = qTEBD.right_canonicalize(A_list, no_trunc=True)
-        A_list = qTEBD.apply_U_all(A_list,  U_list, 0, no_trunc=True)
+        A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, 0, no_trunc=True)
         A_list = qTEBD.left_canonicalize(A_list, no_trunc=True)
 
         ## [ToDo] here assume no truncation
@@ -84,7 +84,7 @@ if __name__ == "__main__":
             ### AAAAA form
             A_list = qTEBD.right_canonicalize(A_list)
             ### BBBBB form
-            A_list = qTEBD.apply_U_all(A_list,  U_list, 0)
+            A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, 0)
             ### AAAAA form
 
             ## [ToDo] here assume no truncation

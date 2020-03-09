@@ -160,7 +160,7 @@ def circuit_2_mps(circuit, product_state, chi=None):
         U_list = circuit[dep_idx]
         ### A_list is modified inplace
         right_canonicalize(A_list)
-        A_list = apply_U_all(A_list, U_list, cache=False)
+        A_list, trunc_error = apply_U_all(A_list, U_list, cache=False)
         mps_of_layer.append([A.copy() for A in A_list])
 
     return mps_of_layer
@@ -295,9 +295,9 @@ def var_layer(new_mps, layer_gate, mps_old, list_of_A_list=None):
     '''
     L = len(layer_gate) + 1
     if list_of_A_list is None:
-        list_of_A_list = apply_U_all([t.copy() for t in mps_old],
-                                     layer_gate,
-                                     cache=True)
+        list_of_A_list, trunc_error = apply_U_all([t.copy() for t in mps_old],
+                                                  layer_gate,
+                                                  cache=True)
     else:
         pass
     # we copy the tensor in mps_old, so that mps_old is not modified.
@@ -511,7 +511,7 @@ def expectation_values_1_site(A_list, Op_list, check_norm=True):
 
 def expectation_values(A_list, H_list, check_norm=True):
     if check_norm:
-        assert np.isclose(overlap(A_list, A_list), 1.)
+        assert np.isclose(np.abs(overlap(A_list, A_list)), 1.)
     else:
         pass
 
@@ -539,7 +539,7 @@ def expectation_values(A_list, H_list, check_norm=True):
 
     return E_list
 
-def right_canonicalize(A_list, no_trunc=False):
+def right_canonicalize(A_list, no_trunc=False, chi=None):
     '''
     Bring mps in right canonical form, assuming the input mps is in
     left canonical form already.
@@ -555,8 +555,12 @@ def right_canonicalize(A_list, no_trunc=False):
         else:
             chi1 = np.sum(Y>10.**(-15))
 
+        if chi is not None:
+            chi1 = np.amin([chi1, chi])
+
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi1]
         Y = Y[arg_sorted_idx]
+        Y = Y / np.linalg.norm(Y)
         X = X[: ,arg_sorted_idx]
         Z = Z[arg_sorted_idx, :]
 
@@ -565,9 +569,10 @@ def right_canonicalize(A_list, no_trunc=False):
         new_A = np.tensordot(A_list[i-1], R, axes=([2], [0]))  #[p, 1l, (1r)] [(2l), 2r]
         A_list[i-1] = new_A
 
+    A_list[0] = A_list[0] / np.linalg.norm(A_list[0])
     return A_list
 
-def left_canonicalize(A_list, no_trunc=False):
+def left_canonicalize(A_list, no_trunc=False, chi=None):
     '''
     Bring mps in left canonical form, assuming the input mps is in
     right canonical form already.
@@ -583,8 +588,12 @@ def left_canonicalize(A_list, no_trunc=False):
         else:
             chi2 = np.sum(Y>10.**(-15))
 
+        if chi is not None:
+            chi2 = np.amin([chi2, chi])
+
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
         Y = Y[arg_sorted_idx]
+        Y = Y / np.linalg.norm(Y)
         X = X[: ,arg_sorted_idx]
         Z = Z[arg_sorted_idx, :]
 
@@ -593,6 +602,7 @@ def left_canonicalize(A_list, no_trunc=False):
         new_A = np.tensordot(R, A_list[i+1], axes=([1], [1]))  #[1l,(1r)],[p, (2l), 2r]
         A_list[i+1] = np.transpose(new_A, [1, 0, 2])
 
+    A_list[-1] = A_list[-1] / np.linalg.norm(A_list[-1])
     return A_list
 
 def get_entanglement(A_list):
@@ -629,18 +639,29 @@ def get_entanglement(A_list):
 
     return ent_list
 
-def apply_U_all(A_list, U_list, cache=False, no_trunc=False):
+def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
     '''
-    if cache is True, we will return a list_A_list,
-    which gives the list of mps of length L, which corresponds to
-    applying 0, 1, 2, ... L-1 gates.
+    Goal:
+        apply a list of two site gates in U_list according to the order to sites
+        [(0, 1), (1, 2), (2, 3), ... ]
+    Input:
+        A_list: the MPS representation to which the U_list apply
+        U_list: a list of two site unitary gates
+        cache: indicate whether the intermediate state should be store.
 
+        no_trunc: indicate whether truncation should take place
+        chi: truncate to bond dimension chi, if chi is given.
+    Output:
+        if cache is True, we will return a list_A_list,
+        which gives the list of mps of length L, which corresponds to
+        applying 0, 1, 2, ... L-1 gates.
     '''
     L = len(A_list)
     if cache:
         list_A_list = []
         list_A_list.append([A.copy() for A in A_list])
 
+    tot_trunc_err = 0.
     for i in range(L-1):
         d1,chi1,chi2 = A_list[i].shape
         d2,chi2,chi3 = A_list[i+1].shape
@@ -656,16 +677,15 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False):
         else:
             chi2 = np.sum(Y>10.**(-15))
 
-        # piv = np.zeros(len(Y), onp.bool)
-        # piv[(np.argsort(Y)[::-1])[:chi2]] = True
+        if chi is not None:
+            chi2 = np.amin([chi2, chi])
 
-        # Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-        # # Y = Y / invsq
-        # X = X[:,piv]
-        # Z = Z[piv,:]
-
+        trunc_idx = (np.argsort(Y)[::-1])[chi2:]
+        trunc_error = np.sum(Y[trunc_idx] ** 2)
+        tot_trunc_err = tot_trunc_err + trunc_error
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
         Y = Y[arg_sorted_idx]
+        Y = Y / np.linalg.norm(Y)
         X = X[: ,arg_sorted_idx]
         Z = Z[arg_sorted_idx, :]
 
@@ -678,9 +698,9 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False):
             pass
 
     if cache:
-        return list_A_list
+        return list_A_list, tot_trunc_err
     else:
-        return A_list
+        return A_list, tot_trunc_err
 
 def apply_U(A_list, U_list, onset):
     '''

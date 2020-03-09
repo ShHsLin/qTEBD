@@ -8,8 +8,8 @@ import scipy.sparse.linalg.eigen.arpack as arp
 
 
 def Op_expectation(Op, site_i, vector, L):
-    full_Op = scipy.sparse.kron(scipy.sparse.eye(2 ** (site_i - 1)), Op)
-    full_Op = scipy.sparse.kron(full_Op, scipy.sparse.eye(2 ** (L - site_i)))
+    full_Op = scipy.sparse.kron(scipy.sparse.eye(2 ** (site_i)), Op)
+    full_Op = scipy.sparse.kron(full_Op, scipy.sparse.eye(2 ** (L - site_i - 1)))
     full_Op = scipy.sparse.csr_matrix(full_Op)
     return vector.conjugate().dot(full_Op.dot(vector))
 
