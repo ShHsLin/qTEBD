@@ -79,6 +79,8 @@ if __name__ == "__main__":
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
         print("current chi : ", A_list[L//2].shape[1])
 
+    stop_crit = 1e-4
+    first_break_idx = np.inf
     for idx in range(1+exact_steps, int(total_t//dt) + 1):
         if fidelity_reached < 1. - 1e-12 and A_list[L//2].shape[1] < chi:
             ### AAAAA form
@@ -184,6 +186,17 @@ if __name__ == "__main__":
         t_list.append(t_list[-1]+dt)
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
+
+        trunc_error = np.abs(1. - fidelity_reached)
+        if trunc_error > stop_crit:
+            first_break_idx = np.amin([first_break_idx, idx])
+
+        if first_break_idx + int(1.//dt) < idx:
+            break
+
+    num_data = len(t_list)
+    Sz_array = Sz_array[:num_data, :]
+    ent_array = ent_array[:num_data, :]
 
     dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
     if not os.path.exists(dir_path):

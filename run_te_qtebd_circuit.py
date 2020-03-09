@@ -62,6 +62,8 @@ if __name__ == "__main__":
     Sz_array[0, :] = qTEBD.expectation_values_1_site(mps_of_layer[-1], Sz_list)
     ent_array[0, :] = qTEBD.get_entanglement(mps_of_last_layer)
 
+    stop_crit = 1e-4
+    first_break_idx = np.inf
     for idx in range(1, int(total_t // dt) + 1):
         # [TODO] remove the assertion below
         assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
@@ -124,6 +126,21 @@ if __name__ == "__main__":
         fidelity_reached = np.abs(qTEBD.overlap(target_mps, mps_of_last_layer))**2 / qTEBD.overlap(target_mps, target_mps)
         print("fidelity reached : ", fidelity_reached)
         update_error_list.append(1. - fidelity_reached)
+
+        ################
+        ## Forcing to stop if truncation is already too high.
+        ################
+        trunc_error = np.abs(1. - fidelity_reached)
+        if trunc_error > stop_crit:
+            first_break_idx = np.amin([first_break_idx, idx])
+
+        if first_break_idx + int(1.//dt) < idx:
+            break
+
+    num_data = len(t_list)
+    Sz_array = Sz_array[:num_data, :]
+    ent_array = ent_array[:num_data, :]
+
 
 
     dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)

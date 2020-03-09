@@ -24,8 +24,8 @@ if __name__ == '__main__':
     except:
         pass
 
-    for chi in [2,4,8,32]:
-        dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+    for chi in [2,4, 8,32,128,512]:
+        dir_path = 'data_tebd/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
 
         filename = 'mps_chi%d_%s_energy.npy' % (chi, order)
         path = dir_path + filename
@@ -76,6 +76,6 @@ if __name__ == '__main__':
     plt.ylabel('$< S_z^{L/2} >$')
     plt.legend()
     # plt.savefig('figure/finite_L%d_chi%d.png' % (L, chi))
-    plt.savefig('figure/time_evolv_%s/mps_L%d_g%.1f_%s.png' % (Hamiltonian, L, g, order))
+    plt.savefig('figure/time_evolv_%s/tebd_mps_L%d_g%.1f_%s.png' % (Hamiltonian, L, g, order))
     # plt.savefig('figure/finite_L%d.png' % (L))
     plt.show()

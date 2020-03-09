@@ -47,10 +47,10 @@ L 10 1st order trotter       |  L 10 2nd order trotter
 
 
 ## Quantum Quench
-### TFI g = 0.1
+### TFI L = 31, g = 1.
 MPS       |  Circuit
 :---------------------------:|:-------------------------:
-![](figure/time_evolv_TFI/mps_L11_g0.1_2nd.png)  |  ![](figure/time_evolv_TFI/circuit_L11_g0.1_1st.png)
+![](figure/time_evolv_TFI/tebd_mps_L31_g1.0_1st.png)  |  ![](figure/time_evolv_TFI/circuit_L31_g1.0_1st.png)
 
 
 ### Single-layer circuit

@@ -41,7 +41,6 @@ if __name__ == "__main__":
     J = 1.
     dt = 0.05
     total_t = 30
-    stop_crit = 1e-4
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
     H_list =  qTEBD.get_H(L, J, g, Hamiltonian)
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
@@ -57,6 +56,7 @@ if __name__ == "__main__":
     U_list =  qTEBD.make_U(H_list, 1j * dt)
     U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
 
+    stop_crit = 1e-4
     first_break_idx = np.inf
     for idx in range(1, int(total_t//dt) + 1):
         A_list = qTEBD.right_canonicalize(A_list, no_trunc=True)
@@ -75,6 +75,10 @@ if __name__ == "__main__":
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
         print("current chi : ", A_list[L//2].shape[1])
+
+        ################
+        ## Forcing to stop if truncation is already too high.
+        ################
         if trunc_error > stop_crit:
             first_break_idx = np.amin([first_break_idx, idx])
 
