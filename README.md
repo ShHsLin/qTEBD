@@ -50,8 +50,9 @@ L 10 1st order trotter       |  L 10 2nd order trotter
 ### TFI L = 31, g = 1.
 MPS       |  Circuit
 :---------------------------:|:-------------------------:
-![](figure/time_evolv_TFI/tebd_mps_L31_g1.0_1st.png)  |  ![](figure/time_evolv_TFI/circuit_L31_g1.0_1st.png)
 
+![](figure/time_evolv_TFI/tebd_mps_L31_g1.0_1st.png)
+![](figure/time_evolv_TFI/circuit_L31_g1.0_1st.png)
 ![](figure/time_evolv_TFI/circuit_L31_g1.0_1st_1iter.png)
 
 
