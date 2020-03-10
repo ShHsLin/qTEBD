@@ -52,6 +52,8 @@ MPS       |  Circuit
 :---------------------------:|:-------------------------:
 ![](figure/time_evolv_TFI/tebd_mps_L31_g1.0_1st.png)  |  ![](figure/time_evolv_TFI/circuit_L31_g1.0_1st.png)
 
+![](figure/time_evolv_TFI/circuit_L31_g1.0_1st_1iter.png)
+
 
 ### Single-layer circuit
 
