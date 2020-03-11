@@ -171,7 +171,7 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
         Do a sweep from top of the circuit down to product state,
         and do a sweep from bottom of the circuit to top.
     Input:
-        target_mps: can be not normalized.
+        target_mps: can be not normalized, but should be in left canonical form.
         bottom_mps: the mps representing the contraction of full circuit
             with product state
         circuit: list of list of unitary
@@ -213,6 +213,9 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
         left_canonicalize(top_mps)
         left_canonicalize(bottom_mps)
 
+    max_chi_bot = np.amax([np.amax(t.shape) for t in bottom_mps])
+    max_chi_top = np.amax([np.amax(t.shape) for t in top_mps])
+    print("after sweep down, X(top_mps) = ", max_chi_top, " X(bot_mps) = ", max_chi_bot)
     ## [TODO] Somewhat the below is not helping.
     ## Now the bottom_mps is just the product state.
     ## we do a var_mps here and update the product state.
@@ -222,7 +225,7 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
     # product_state, inner_p = var_A(product_state, top_mps, 'right')
     # product_state, inner_p = var_A(product_state, top_mps, 'left')
     # bottom_mps = [t.copy() for t in product_state]
-    assert np.isclose(np.abs(overlap(bottom_mps, product_state)), 1)
+    assert np.isclose(np.abs(overlap(bottom_mps, product_state)), 1, rtol=1e-8)
     bottom_mps = [t.copy() for t in product_state]
 
     print("Sweeping from bottom to top, overlap (before) : ",
@@ -246,6 +249,10 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
 
     ## finish sweeping
     ## bottom_mps is mps_final
+
+    max_chi_bot = np.amax([np.amax(t.shape) for t in bottom_mps])
+    max_chi_top = np.amax([np.amax(t.shape) for t in top_mps])
+    print("after sweep up, X(top_mps) = ", max_chi_top, " X(bot_mps) = ", max_chi_bot)
     return bottom_mps, circuit, product_state
 
 
@@ -443,7 +450,7 @@ def apply_gate(A_list, gate, idx, move='right'):
     theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
     X, Y, Z = misc.svd(theta, full_matrices=0)
-    chi2 = np.sum(Y>10.**(-15))
+    chi2 = np.sum(Y>1e-12)
 
     # piv = np.zeros(len(Y), onp.bool)
     # piv[(np.argsort(Y)[::-1])[:chi2]] = True
@@ -553,7 +560,7 @@ def right_canonicalize(A_list, no_trunc=False, chi=None):
         if no_trunc:
             chi1 = np.size(Y)
         else:
-            chi1 = np.sum(Y>10.**(-15))
+            chi1 = np.sum(Y>1e-12)
 
         if chi is not None:
             chi1 = np.amin([chi1, chi])
@@ -586,7 +593,7 @@ def left_canonicalize(A_list, no_trunc=False, chi=None):
         if no_trunc:
             chi2 = np.size(Y)
         else:
-            chi2 = np.sum(Y>10.**(-15))
+            chi2 = np.sum(Y>1e-12)
 
         if chi is not None:
             chi2 = np.amin([chi2, chi])
@@ -622,7 +629,7 @@ def get_entanglement(A_list):
         X, Y, Z = misc.svd(np.reshape(np.transpose(copy_A_list[i], [1, 0, 2]), [chi1, d1 * chi2]),
                                 full_matrices=0)
 
-        chi1 = np.sum(Y>10.**(-15))
+        chi1 = np.sum(Y>1e-12)
 
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi1]
         Y = Y[arg_sorted_idx]
@@ -675,7 +682,7 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
         if no_trunc:
             chi2 = np.size(Y)
         else:
-            chi2 = np.sum(Y>10.**(-15))
+            chi2 = np.sum(Y>1e-12)
 
         if chi is not None:
             chi2 = np.amin([chi2, chi])
@@ -734,7 +741,7 @@ def apply_U(A_list, U_list, onset):
         theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
         X, Y, Z = misc.svd(theta,full_matrices=0)
-        chi2 = np.sum(Y>10.**(-15))
+        chi2 = np.sum(Y>1e-12)
 
         # piv = np.zeros(len(Y), onp.bool)
         # piv[(np.argsort(Y)[::-1])[:chi2]] = True

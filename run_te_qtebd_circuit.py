@@ -46,6 +46,7 @@ if __name__ == "__main__":
     update_error_list = [0.]
     Sz_array = np.zeros([int(total_t // dt) + 1, L], dtype=np.complex)
     ent_array = np.zeros([int(total_t // dt) + 1, L-1], dtype=np.double)
+    num_iter_array = np.zeros([int(total_t // dt) + 1], dtype=np.int)
 
 
     ################# INITIALIZATION  ######################
@@ -62,8 +63,7 @@ if __name__ == "__main__":
     Sz_array[0, :] = qTEBD.expectation_values_1_site(mps_of_layer[-1], Sz_list)
     ent_array[0, :] = qTEBD.get_entanglement(mps_of_last_layer)
 
-    stop_crit = 1e-4
-    first_break_idx = np.inf
+    stop_crit = 1e-1
     for idx in range(1, int(total_t // dt) + 1):
         # [TODO] remove the assertion below
         assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
@@ -74,6 +74,9 @@ if __name__ == "__main__":
         else:
             target_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
             target_mps = qTEBD.apply_U(target_mps, U_list, 1)
+
+        right_canonicalize(target_mps, no_trunc=True)
+        left_canonicalize(target_mps, no_trunc=False)
 
         # if idx == 1:
         #     my_circuit[0] = [U.copy() for U in U_list]
@@ -100,11 +103,10 @@ if __name__ == "__main__":
         F = np.abs(overlap) ** 2 / target_mps_norm_sq
         ###################################
 
-        num_iter = 0
+        num_iter = 1
         F_diff = 1
         while (num_iter < max_N_iter and 1-F > tol and F_diff > cov_crit):
             num_iter = num_iter + 1
-            iter_mps = [A.copy() for A in target_mps]
             mps_of_last_layer, my_circuit, product_state = qTEBD.var_circuit(target_mps, mps_of_last_layer,
                                                                              my_circuit, product_state)
             overlap = qTEBD.overlap(mps_of_last_layer, target_mps)
@@ -126,20 +128,20 @@ if __name__ == "__main__":
         fidelity_reached = np.abs(qTEBD.overlap(target_mps, mps_of_last_layer))**2 / qTEBD.overlap(target_mps, target_mps)
         print("fidelity reached : ", fidelity_reached)
         update_error_list.append(1. - fidelity_reached)
+        num_iter_array[idx] = num_iter
 
         ################
         ## Forcing to stop if truncation is already too high.
         ################
-        trunc_error = np.abs(1. - fidelity_reached)
-        if trunc_error > stop_crit:
-            first_break_idx = np.amin([first_break_idx, idx])
-
-        if first_break_idx + int(1.//dt) < idx:
+        total_trunc_error = np.abs(1- np.multiply.reduce(1. - np.array(update_error_list)))
+        print('----------- total_trunc_error = ', total_trunc_error, '------------')
+        if total_trunc_error > stop_crit:
             break
 
     num_data = len(t_list)
     Sz_array = Sz_array[:num_data, :]
     ent_array = ent_array[:num_data, :]
+    num_iter_array = num_iter_array[:num_data]
 
 
 
@@ -166,4 +168,8 @@ if __name__ == "__main__":
     filename = 'circuit_depth%d_Niter%d_%s_ent_array.npy' % (depth, N_iter, order)
     path = dir_path + filename
     np.save(path, ent_array)
+
+    filename = 'circuit_depth%d_Niter%d_%s_Niter_array.npy' % (depth, N_iter, order)
+    path = dir_path + filename
+    np.save(path, num_iter_array)
 
