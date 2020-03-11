@@ -15,7 +15,7 @@ if __name__ == '__main__':
     Hamiltonian = 'TFI'
 
     plt.close()
-    fig=plt.figure(figsize=(6,9))
+    fig=plt.figure(figsize=(8,10))
 
     ############################################
     dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
@@ -30,7 +30,7 @@ if __name__ == '__main__':
         ax1 = plt.subplot(311)
         plt.plot(exact_dt[:], exact_sz[:,L//2],'--k', label='exact')
     except:
-        chi = 1024
+        chi = 128
         dir_path = 'data_tebd/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
         filename = 'mps_chi%d_%s_sz_array.npy' % (chi, order)
 
@@ -42,13 +42,21 @@ if __name__ == '__main__':
         path = dir_path + filename
         mps_sz = np.load(path)
 
-        ax1 = plt.subplot(311)
-        plt.plot(t_list[:], mps_sz[:,L//2],'--k', label='exact')
+        # ax1 = plt.subplot(311)
+        # plt.plot(t_list[:100], mps_sz[:100,L//2],'--k', label='exact')
 
-
-    for depth in [1, 2, 3]:
+    final_time = []
+    for depth in range(1,5):
+        final_time.append([])
         for idx, N_iter in enumerate([1, 10, 100]):
-            color = color_set[depth-1][idx]
+            color = color_set[depth-1][idx*2]
+            # if depth == 1:
+            #     N_iter = 1
+            # else:
+            #     N_iter = 100
+            # color = color_set[1][depth]
+
+
             try:
                 dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
 
@@ -74,9 +82,10 @@ if __name__ == '__main__':
 
 
                 ax1 = plt.subplot(311)
-                plt.plot(t_list, circuit_sz[:,L//2], '-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
+                len_t_list = len(t_list)
+                # plt.plot(t_list, circuit_sz[:,L//2] - mps_sz[:len_t_list, L//2], '-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
+                plt.plot(t_list, np.abs(circuit_sz[:,L//2] - mps_sz[:len_t_list, L//2]), '-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
                 plt.setp(ax1.get_xticklabels(), fontsize=6)
-
 
                 ax2 = plt.subplot(312, sharex=ax1)
                 plt.semilogy(t_list, update_error_list,'.', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
@@ -85,10 +94,36 @@ if __name__ == '__main__':
                 ax3 = plt.subplot(313, sharex=ax1)
                 plt.plot(t_list, circuit_ent[:,L//2], '.', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
                 plt.ylabel('engtanglement')
-                chi = int(np.log2(depth))
-                #plt.axhline(y=-np.log(1./chi), color='r', linestyle='-', label='bound $\\chi=%d$' % chi)
-            except:
-                pass
+                chi = int(2**(depth))
+                plt.axhline(y=-np.log(1./chi), color='r', linestyle='--', label='bound $\\chi=%d$' % chi)
+
+                final_time[-1].append((N_iter, len(t_list)))
+            except Exception as e:
+                print(e)
+
+    ax2_1 = ax2.twinx()
+    for depth in range(1,5):
+        for idx, N_iter in enumerate([1, 10, 100]):
+            color = color_set[depth-1][idx * 2]
+
+            try:
+                dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+
+                filename = 'circuit_depth%d_Niter%d_%s_dt.npy' % (depth, N_iter, order)
+                path = dir_path + filename
+                t_list = np.load(path)
+
+                filename = 'circuit_depth%d_Niter%d_%s_error.npy' % (depth, N_iter, order)
+                path = dir_path + filename
+                update_error_list = np.load(path)
+
+                accum_error = np.abs(1 - np.multiply.accumulate(1 - update_error_list))
+                ax2_1.semilogy(t_list, accum_error,'-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
+                ax2_1.set_ylabel(u'$1 - \prod\mathcal{F}$')
+            except Exception as e:
+                print(e)
+
+
 
 
     plt.setp(ax1.get_xticklabels(), visible=False)
@@ -101,4 +136,11 @@ if __name__ == '__main__':
     plt.ylabel('$< S_z^{L/2} >$')
     plt.legend()
     plt.savefig('figure/time_evolv_%s/circuit_L%d_g%.1f_%s.png' % (Hamiltonian, L, g, order))
+    plt.show()
+
+    plt.figure()
+    for data in final_time:
+        print(data)
+        plt.plot(data, 'x-')
+
     plt.show()

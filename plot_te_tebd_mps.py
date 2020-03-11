@@ -24,7 +24,7 @@ if __name__ == '__main__':
     except:
         pass
 
-    for chi in [2,4, 8,32,128,512]:
+    for chi in [2,4,8,16,32,128,512,1024]:
         dir_path = 'data_tebd/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
 
         filename = 'mps_chi%d_%s_energy.npy' % (chi, order)
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
         ax2 = plt.subplot(312, sharex=ax1)
         plt.semilogy(t_list, update_error_list,'.', label='$\\chi=%d$' % chi)
-        plt.ylabel('$1 - \mathcal{F}$')
+        plt.ylabel('$1 - \mathcal{f}$')
 
         ax3 = plt.subplot(313, sharex=ax1)
         plt.plot(t_list, ent_array[:,L//2], '.', label='$\\chi=%d$' % chi)
@@ -63,6 +63,20 @@ if __name__ == '__main__':
 
 
 
+    ax2_1 = ax2.twinx()
+    for chi in [2,4,8,16,32,128,512,1024]:
+        filename = 'mps_chi%d_%s_dt.npy' % (chi, order)
+        path = dir_path + filename
+        t_list = np.load(path)
+
+        filename = 'mps_chi%d_%s_error.npy' % (chi, order)
+        path = dir_path + filename
+        update_error_list = np.load(path)
+
+        accum_F = np.abs(1 - np.multiply.accumulate(1 - update_error_list))
+        ax2_1.semilogy(t_list, accum_F,'-', label='$\\chi=%d$' % chi)
+
+    ax2_1.set_ylabel('$1 - \mathcal{F}$')
 
     plt.setp(ax1.get_xticklabels(), visible=False)
     plt.setp(ax2.get_xticklabels(), visible=False)
