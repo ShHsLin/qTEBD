@@ -27,9 +27,8 @@ Single-layer circuit should match with the result of qTEBD with MPS and DMRG wit
 
 
 ## TODO
-* plot num para v.s. accuracy
+* Rerun Ground state; Re plot optimization curve; Re plot num para v.s. accuracy
 * MPS truncation for gate contraction; logging truncation error in gate contraction; rerun all data;
-* Real time evolution; Global quench; 
 * Scaling with Niter
 * The effect in the pattern of the layer of gates
 

@@ -1,9 +1,9 @@
 from scipy import integrate
 from scipy.linalg import expm
 # import numpy as np
-import misc, os, sys
+import os, sys
 sys.path.append('..')
-import qTEBD
+import qTEBD, misc
 import autograd.numpy as np
 from autograd import grad
 

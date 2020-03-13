@@ -1,9 +1,9 @@
 from scipy import integrate
 from scipy.linalg import expm
 import numpy as np
-import misc, os, sys
+import os, sys
 sys.path.append('..')
-import qTEBD
+import qTEBD, misc
 
 '''
     Algorithm:
@@ -78,11 +78,6 @@ if __name__ == "__main__":
 
         qTEBD.right_canonicalize(target_mps, no_trunc=True)
         qTEBD.left_canonicalize(target_mps, no_trunc=False)
-
-        # if idx == 1:
-        #     my_circuit[0] = [U.copy() for U in U_list]
-        #     continue
-        # else:
 
         # target_mps is the e(-H)|psi0> which is not normalizaed.
         target_mps_norm_sq = qTEBD.overlap(target_mps, target_mps)

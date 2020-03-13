@@ -1,8 +1,9 @@
 from scipy import integrate
 from scipy.linalg import expm
-import misc, os, sys
+import pickle
+import os, sys
 sys.path.append('..')
-import qTEBD
+import qTEBD, misc
 import numpy as np
 # import autograd.numpy as np
 # from autograd import grad
@@ -41,10 +42,12 @@ if __name__ == "__main__":
 
     J = 1.
     dt = 0.01
+    save_each = int(0.1 // dt)
     total_t = 30
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
     H_list =  qTEBD.get_H(L, J, g, Hamiltonian)
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
+    idx = 0
 
     t_list = [0]
     E_list = [np.sum(qTEBD.expectation_values(A_list, H_list))]
@@ -56,6 +59,13 @@ if __name__ == "__main__":
 
     U_list =  qTEBD.make_U(H_list, 1j * dt)
     U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
+
+    wf_dir_path = 'data_tebd/1d_%s_g%.1f/L%d/wf_chi%d_%s/' % (Hamiltonian, g, L, chi, order)
+    if not os.path.exists(wf_dir_path):
+        os.makedirs(wf_dir_path)
+
+    if idx % save_each == 0:
+        pickle.dump(A_list, open(wf_dir_path + 'T%.1f.pkl' % t_list[-1],'wb'))
 
     stop_crit = 1e-1
     for idx in range(1, int(total_t//dt) + 1):
@@ -76,10 +86,12 @@ if __name__ == "__main__":
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
         print("current chi : ", A_list[L//2].shape[1])
 
+        if idx % save_each == 0:
+            pickle.dump(A_list, open(wf_dir_path + 'T%.1f.pkl' % t_list[-1],'wb'))
+
         ################
         ## Forcing to stop if truncation is already too high.
         ################
-
         total_trunc_error = np.abs(1 - np.multiply.reduce(1. - np.array(update_error_list)))
         if total_trunc_error > stop_crit:
             break
