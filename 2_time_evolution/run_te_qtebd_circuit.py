@@ -1,6 +1,7 @@
 from scipy import integrate
 from scipy.linalg import expm
 import numpy as np
+import pickle
 import os, sys
 sys.path.append('..')
 import qTEBD, misc
@@ -29,6 +30,7 @@ if __name__ == "__main__":
     order = str(sys.argv[5])
     total_t = 30.
     dt = 0.01
+    save_each = int(0.1 // dt)
     tol = 1e-8
     cov_crit = tol * 0.1
     max_N_iter = N_iter
@@ -41,6 +43,7 @@ if __name__ == "__main__":
     U_list =  qTEBD.make_U(H_list, 1j * dt)
     U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
 
+    idx = 0
     my_circuit = []
     t_list = [0]
     E_list = []
@@ -63,6 +66,15 @@ if __name__ == "__main__":
     E_list.append(np.sum(qTEBD.expectation_values(mps_of_layer[-1], H_list)))
     Sz_array[0, :] = qTEBD.expectation_values_1_site(mps_of_layer[-1], Sz_list)
     ent_array[0, :] = qTEBD.get_entanglement(mps_of_last_layer)
+
+    wf_dir_path = 'data_te/1d_%s_g%.1f/L%d/wf_depth%d_Niter%d_%s/' % (Hamiltonian, g, L,
+                                                                      depth, N_iter, order)
+    if not os.path.exists(wf_dir_path):
+        os.makedirs(wf_dir_path)
+
+    if idx % save_each == 0:
+        pickle.dump(my_circuit, open(wf_dir_path + 'T%.1f.pkl' % t_list[-1], 'wb'))
+
 
     stop_crit = 1e-1
     for idx in range(1, int(total_t // dt) + 1):
@@ -125,6 +137,9 @@ if __name__ == "__main__":
         print("fidelity reached : ", fidelity_reached)
         update_error_list.append(1. - fidelity_reached)
         num_iter_array[idx] = num_iter
+
+        if idx % save_each == 0:
+            pickle.dump(my_circuit, open(wf_dir_path + 'T%.1f.pkl' % t_list[-1], 'wb'))
 
         ################
         ## Forcing to stop if truncation is already too high.
