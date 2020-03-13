@@ -7,6 +7,8 @@ import scipy.sparse as sparse
 import scipy.sparse.linalg
 import numpy as np
 import scipy.sparse.linalg.eigen.arpack as arp
+import sys
+sys.path.append('..')
 import ed
 
 

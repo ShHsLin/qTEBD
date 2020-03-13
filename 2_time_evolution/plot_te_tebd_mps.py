@@ -24,7 +24,7 @@ if __name__ == '__main__':
     except:
         pass
 
-    for chi in [2,4,8,16,32,128,512,1024]:
+    for chi in [2,4,8,16,32,64,128]:
         dir_path = 'data_tebd/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
 
         filename = 'mps_chi%d_%s_energy.npy' % (chi, order)
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
 
     ax2_1 = ax2.twinx()
-    for chi in [2,4,8,16,32,128,512,1024]:
+    for chi in [2,4,8,16,32,64,128]:
         filename = 'mps_chi%d_%s_dt.npy' % (chi, order)
         path = dir_path + filename
         t_list = np.load(path)

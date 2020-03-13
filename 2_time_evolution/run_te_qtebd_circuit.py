@@ -2,6 +2,7 @@ from scipy import integrate
 from scipy.linalg import expm
 import numpy as np
 import misc, os, sys
+sys.path.append('..')
 import qTEBD
 
 '''
@@ -75,8 +76,8 @@ if __name__ == "__main__":
             target_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
             target_mps = qTEBD.apply_U(target_mps, U_list, 1)
 
-        right_canonicalize(target_mps, no_trunc=True)
-        left_canonicalize(target_mps, no_trunc=False)
+        qTEBD.right_canonicalize(target_mps, no_trunc=True)
+        qTEBD.left_canonicalize(target_mps, no_trunc=False)
 
         # if idx == 1:
         #     my_circuit[0] = [U.copy() for U in U_list]

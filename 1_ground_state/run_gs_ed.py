@@ -1,6 +1,7 @@
 """ Exact diagonalization code to find the ground state of
 a 1D quantum Ising model."""
-
+import sys
+sys.path.append('..')
 import scipy.sparse as sparse
 import numpy as np
 import scipy.sparse.linalg.eigen.arpack as arp

@@ -1,10 +1,11 @@
 from scipy import integrate
 from scipy.linalg import expm
-# import numpy as np
 import misc, os, sys
+sys.path.append('..')
 import qTEBD
-import autograd.numpy as np
-from autograd import grad
+import numpy as np
+# import autograd.numpy as np
+# from autograd import grad
 
 def expm_eigh(t, h):
     """
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     ## [TODO] add check whether data already
 
     J = 1.
-    dt = 0.05
+    dt = 0.01
     total_t = 30
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
     H_list =  qTEBD.get_H(L, J, g, Hamiltonian)
@@ -56,8 +57,7 @@ if __name__ == "__main__":
     U_list =  qTEBD.make_U(H_list, 1j * dt)
     U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
 
-    stop_crit = 1e-4
-    first_break_idx = np.inf
+    stop_crit = 1e-1
     for idx in range(1, int(total_t//dt) + 1):
         A_list = qTEBD.right_canonicalize(A_list, no_trunc=True)
         A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, False, no_trunc=False, chi=chi)
@@ -79,10 +79,9 @@ if __name__ == "__main__":
         ################
         ## Forcing to stop if truncation is already too high.
         ################
-        if trunc_error > stop_crit:
-            first_break_idx = np.amin([first_break_idx, idx])
 
-        if first_break_idx + int(1.//dt) < idx:
+        total_trunc_error = np.abs(1 - np.multiply.reduce(1. - np.array(update_error_list)))
+        if total_trunc_error > stop_crit:
             break
 
     num_data = len(t_list)
