@@ -450,7 +450,7 @@ def apply_gate(A_list, gate, idx, move='right'):
     theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
     X, Y, Z = misc.svd(theta, full_matrices=0)
-    chi2 = np.sum(Y>1e-12)
+    chi2 = np.sum(Y>1e-14)
 
     # piv = np.zeros(len(Y), onp.bool)
     # piv[(np.argsort(Y)[::-1])[:chi2]] = True
@@ -560,7 +560,7 @@ def right_canonicalize(A_list, no_trunc=False, chi=None):
         if no_trunc:
             chi1 = np.size(Y)
         else:
-            chi1 = np.sum(Y>1e-12)
+            chi1 = np.sum(Y>1e-14)
 
         if chi is not None:
             chi1 = np.amin([chi1, chi])
@@ -593,7 +593,7 @@ def left_canonicalize(A_list, no_trunc=False, chi=None):
         if no_trunc:
             chi2 = np.size(Y)
         else:
-            chi2 = np.sum(Y>1e-12)
+            chi2 = np.sum(Y>1e-14)
 
         if chi is not None:
             chi2 = np.amin([chi2, chi])
@@ -629,7 +629,7 @@ def get_entanglement(A_list):
         X, Y, Z = misc.svd(np.reshape(np.transpose(copy_A_list[i], [1, 0, 2]), [chi1, d1 * chi2]),
                                 full_matrices=0)
 
-        chi1 = np.sum(Y>1e-12)
+        chi1 = np.sum(Y>1e-14)
 
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi1]
         Y = Y[arg_sorted_idx]
@@ -682,7 +682,7 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
         if no_trunc:
             chi2 = np.size(Y)
         else:
-            chi2 = np.sum(Y>1e-12)
+            chi2 = np.sum(Y>1e-14)
 
         if chi is not None:
             chi2 = np.amin([chi2, chi])
@@ -741,7 +741,7 @@ def apply_U(A_list, U_list, onset):
         theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
         X, Y, Z = misc.svd(theta,full_matrices=0)
-        chi2 = np.sum(Y>1e-12)
+        chi2 = np.sum(Y>1e-14)
 
         # piv = np.zeros(len(Y), onp.bool)
         # piv[(np.argsort(Y)[::-1])[:chi2]] = True

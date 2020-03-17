@@ -31,7 +31,7 @@ if __name__ == "__main__":
     total_t = 30.
     dt = 0.01
     save_each = int(0.1 // dt)
-    tol = 1e-8
+    tol = 1e-12
     cov_crit = tol * 0.1
     max_N_iter = N_iter
 
@@ -67,17 +67,26 @@ if __name__ == "__main__":
     Sz_array[0, :] = qTEBD.expectation_values_1_site(mps_of_layer[-1], Sz_list)
     ent_array[0, :] = qTEBD.get_entanglement(mps_of_last_layer)
 
-    wf_dir_path = 'data_te/1d_%s_g%.1f/L%d/wf_depth%d_Niter%d_%s/' % (Hamiltonian, g, L,
-                                                                      depth, N_iter, order)
+    dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+    wf_dir_path = dir_path + 'wf_depth%d_Niter%d_%s/' % (depth, N_iter, order)
     if not os.path.exists(wf_dir_path):
         os.makedirs(wf_dir_path)
 
     if idx % save_each == 0:
         pickle.dump(my_circuit, open(wf_dir_path + 'T%.1f.pkl' % t_list[-1], 'wb'))
 
+    running_idx = len(t_list)
+    try:
+        tuple_loaded = misc.load_circuit(dir_path, depth, N_iter, order)
+        running_idx, my_circuit, E_list, t_list, update_error_list, Sz_array, ent_array, num_iter_array = tuple_loaded
+        print(" old result loaded ")
+        mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
+        mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+    except Exception as e:
+        print(e)
 
     stop_crit = 1e-1
-    for idx in range(1, int(total_t // dt) + 1):
+    for idx in range(running_idx, int(total_t // dt) + 1):
         # [TODO] remove the assertion below
         assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
         if order == '2nd':
@@ -141,6 +150,10 @@ if __name__ == "__main__":
         if idx % save_each == 0:
             pickle.dump(my_circuit, open(wf_dir_path + 'T%.1f.pkl' % t_list[-1], 'wb'))
 
+            misc.save_circuit(dir_path, depth, N_iter, order,
+                              my_circuit, E_list, t_list, update_error_list,
+                              Sz_array, ent_array, num_iter_array, True)
+
         ################
         ## Forcing to stop if truncation is already too high.
         ################
@@ -156,31 +169,7 @@ if __name__ == "__main__":
 
 
 
-    dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
-    filename = 'circuit_depth%d_Niter%d_%s_energy.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(E_list))
-
-    filename = 'circuit_depth%d_Niter%d_%s_dt.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(t_list))
-
-    filename = 'circuit_depth%d_Niter%d_%s_error.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(update_error_list))
-
-    filename = 'circuit_depth%d_Niter%d_%s_sz_array.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, Sz_array)
-
-    filename = 'circuit_depth%d_Niter%d_%s_ent_array.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, ent_array)
-
-    filename = 'circuit_depth%d_Niter%d_%s_Niter_array.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, num_iter_array)
+    misc.save_circuit(dir_path, depth, N_iter, order,
+                      my_circuit, E_list, t_list, update_error_list,
+                      Sz_array, ent_array, num_iter_array, False)
 
