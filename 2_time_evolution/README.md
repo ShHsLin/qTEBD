@@ -22,6 +22,13 @@ MPS       |  Circuit
 ![](figure/time_evolv_TFI/circuit_L31_g1.0_1st_1iter.png)
 
 
+## fidelity
+![](figure/time_evolv_TFI/fidelity.png)
+## log of the error in fidelity
+![](figure/time_evolv_TFI/fidelity_log.png)
+
+
+
 ### Single-layer circuit
 
 Single-layer circuit should match with the result of qTEBD with MPS and DMRG with MPS of bond dimension 2. Indeed we see that. Optimization for single-layer circuit is benign and could be easily solved with one iteration/sweep per time step.
