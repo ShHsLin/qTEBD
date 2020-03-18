@@ -24,6 +24,7 @@ MPS       |  Circuit
 
 ## fidelity
 ![](figure/time_evolv_TFI/fidelity.png)
+
 ## log of the error in fidelity
 ![](figure/time_evolv_TFI/err_fidelity_log.png)
 
