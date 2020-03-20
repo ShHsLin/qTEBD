@@ -63,9 +63,9 @@ if __name__ == "__main__":
 
     exact_steps = int(np.log2(chi))
     for idx in range(exact_steps):
-        A_list = qTEBD.right_canonicalize(A_list, no_trunc=True)
+        A_list, _ = qTEBD.right_canonicalize(A_list, no_trunc=True)
         A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, 0, no_trunc=True)
-        A_list = qTEBD.left_canonicalize(A_list, no_trunc=True)
+        A_list, _ = qTEBD.left_canonicalize(A_list, no_trunc=True)
 
         ## [ToDo] here assume no truncation
         fidelity_reached = 1.
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     for idx in range(1+exact_steps, int(total_t//dt) + 1):
         if fidelity_reached < 1. - 1e-12 and A_list[L//2].shape[1] < chi:
             ### AAAAA form
-            A_list = qTEBD.right_canonicalize(A_list)
+            A_list, _ = qTEBD.right_canonicalize(A_list)
             ### BBBBB form
             A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, 0)
             ### AAAAA form

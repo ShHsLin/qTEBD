@@ -225,7 +225,10 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
     # product_state, inner_p = var_A(product_state, top_mps, 'right')
     # product_state, inner_p = var_A(product_state, top_mps, 'left')
     # bottom_mps = [t.copy() for t in product_state]
-    assert np.isclose(np.abs(overlap(bottom_mps, product_state)), 1, rtol=1e-8)
+
+    overlap_abs = np.abs(overlap(bottom_mps, product_state))
+    # print("overlap_abs = ", overlap_abs)
+    assert np.isclose(overlap_abs, 1, rtol=1e-8)
     bottom_mps = [t.copy() for t in product_state]
 
     print("Sweeping from bottom to top, overlap (before) : ",
@@ -552,6 +555,7 @@ def right_canonicalize(A_list, no_trunc=False, chi=None):
     left canonical form already.
     '''
     L = len(A_list)
+    tot_trunc_err = 0.
     for i in range(L-1, 0, -1):
         d1, chi1, chi2 = A_list[i].shape
         X, Y, Z = misc.svd(np.reshape(np.transpose(A_list[i], [1, 0, 2]), [chi1, d1 * chi2]),
@@ -565,6 +569,10 @@ def right_canonicalize(A_list, no_trunc=False, chi=None):
         if chi is not None:
             chi1 = np.amin([chi1, chi])
 
+        trunc_idx = (np.argsort(Y)[::-1])[chi1:]
+        trunc_error = np.sum(Y[trunc_idx] ** 2) / np.sum(Y ** 2)
+        tot_trunc_err = tot_trunc_err + trunc_error
+
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi1]
         Y = Y[arg_sorted_idx]
         Y = Y / np.linalg.norm(Y)
@@ -577,7 +585,7 @@ def right_canonicalize(A_list, no_trunc=False, chi=None):
         A_list[i-1] = new_A
 
     A_list[0] = A_list[0] / np.linalg.norm(A_list[0])
-    return A_list
+    return A_list, tot_trunc_err
 
 def left_canonicalize(A_list, no_trunc=False, chi=None):
     '''
@@ -585,6 +593,7 @@ def left_canonicalize(A_list, no_trunc=False, chi=None):
     right canonical form already.
     '''
     L = len(A_list)
+    tot_trunc_err = 0
     for i in range(L-1):
         d1, chi1, chi2 = A_list[i].shape
         X, Y, Z = misc.svd(np.reshape(A_list[i], [d1 * chi1, chi2]),
@@ -598,6 +607,10 @@ def left_canonicalize(A_list, no_trunc=False, chi=None):
         if chi is not None:
             chi2 = np.amin([chi2, chi])
 
+        trunc_idx = (np.argsort(Y)[::-1])[chi2:]
+        trunc_error = np.sum(Y[trunc_idx] ** 2) / np.sum(Y ** 2)
+        tot_trunc_err = tot_trunc_err + trunc_error
+
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
         Y = Y[arg_sorted_idx]
         Y = Y / np.linalg.norm(Y)
@@ -610,7 +623,7 @@ def left_canonicalize(A_list, no_trunc=False, chi=None):
         A_list[i+1] = np.transpose(new_A, [1, 0, 2])
 
     A_list[-1] = A_list[-1] / np.linalg.norm(A_list[-1])
-    return A_list
+    return A_list, tot_trunc_err
 
 def get_entanglement(A_list):
     '''
@@ -688,7 +701,7 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
             chi2 = np.amin([chi2, chi])
 
         trunc_idx = (np.argsort(Y)[::-1])[chi2:]
-        trunc_error = np.sum(Y[trunc_idx] ** 2)
+        trunc_error = np.sum(Y[trunc_idx] ** 2) / np.sum(Y**2)
         tot_trunc_err = tot_trunc_err + trunc_error
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
         Y = Y[arg_sorted_idx]

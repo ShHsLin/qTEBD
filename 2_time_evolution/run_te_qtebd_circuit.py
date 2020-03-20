@@ -94,6 +94,10 @@ if __name__ == "__main__":
             target_mps = qTEBD.apply_U(target_mps, U_list, 1)
             target_mps = qTEBD.apply_U(target_mps, U_half_list, 0)
         else:
+            # target_mps = [A.copy() for A in mps_of_last_layer]
+            # target_mps, _ = qTEBD.right_canonicalize(target_mps, no_trunc=True)
+            # target_mps, trunc_error = qTEBD.apply_U_all(target_mps,  U_list, False, no_trunc=True)
+
             target_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
             target_mps = qTEBD.apply_U(target_mps, U_list, 1)
 

@@ -69,9 +69,20 @@ if __name__ == "__main__":
 
     stop_crit = 1e-1
     for idx in range(1, int(total_t//dt) + 1):
-        A_list = qTEBD.right_canonicalize(A_list, no_trunc=True)
-        A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, False, no_trunc=False, chi=chi)
-        A_list = qTEBD.left_canonicalize(A_list, no_trunc=True)
+        #######################
+        # (apply U_list all)  #
+        #######################
+        # A_list = qTEBD.right_canonicalize(A_list, no_trunc=True)
+        # A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, False, no_trunc=False, chi=chi)
+        # A_list = qTEBD.left_canonicalize(A_list, no_trunc=True)
+        ###########################
+        # (apply U_list half half #
+        ###########################
+        qTEBD.right_canonicalize(A_list, no_trunc=True)
+        A_list = qTEBD.apply_U(A_list, U_list, 0)
+        A_list = qTEBD.apply_U(A_list, U_list, 1)
+        qTEBD.right_canonicalize(A_list, no_trunc=True)
+        A_list, trunc_error = qTEBD.left_canonicalize(A_list, no_trunc=False, chi=chi)
 
         ## [ToDo] here assume no truncation
         fidelity_reached = 1. - trunc_error
