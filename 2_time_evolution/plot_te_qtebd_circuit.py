@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import sys, os, misc
+import sys, os
+sys.path.append('..')
+import misc
 import seaborn as sns
 color_set = [sns.color_palette("GnBu_d"),
              sns.color_palette("Blues"),
@@ -43,13 +45,16 @@ if __name__ == '__main__':
         mps_sz = np.load(path)
 
         # ax1 = plt.subplot(311)
-        # plt.plot(t_list[:100], mps_sz[:100,L//2],'--k', label='exact')
+        # plt.plot(t_list[:500], mps_sz[:500,L//2],'--k', label='exact')
 
     final_time = []
     for depth in range(1,5):
         final_time.append([])
-        for idx, N_iter in enumerate([1, 10, 100]):
-            color = color_set[depth-1][idx*2]
+        for idx, N_iter in enumerate([1, 10, 100, 1000]):
+            if N_iter < 100:
+                continue
+
+            color = color_set[depth-1][int(idx*1.5)]
             # if depth == 1:
             #     N_iter = 1
             # else:
@@ -83,8 +88,9 @@ if __name__ == '__main__':
 
                 ax1 = plt.subplot(311)
                 len_t_list = len(t_list)
-                # plt.plot(t_list, circuit_sz[:,L//2] - mps_sz[:len_t_list, L//2], '-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
-                plt.plot(t_list, np.abs(circuit_sz[:,L//2] - mps_sz[:len_t_list, L//2]), '-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
+                # plt.plot(t_list, circuit_sz[:,L//2], '-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
+                # plt.plot(t_list, np.abs(circuit_sz[:,L//2] - mps_sz[:len_t_list, L//2]), '-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
+                plt.semilogy(t_list, np.abs(circuit_sz[:,L//2] - mps_sz[:len_t_list, L//2]), '-', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
                 plt.setp(ax1.get_xticklabels(), fontsize=6)
 
                 ax2 = plt.subplot(312, sharex=ax1)
@@ -103,8 +109,11 @@ if __name__ == '__main__':
 
     ax2_1 = ax2.twinx()
     for depth in range(1,5):
-        for idx, N_iter in enumerate([1, 10, 100]):
-            color = color_set[depth-1][idx * 2]
+        for idx, N_iter in enumerate([1, 10, 100, 1000]):
+            if N_iter < 100:
+                continue
+
+            color = color_set[depth-1][int(idx*1.5)]
 
             try:
                 dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)

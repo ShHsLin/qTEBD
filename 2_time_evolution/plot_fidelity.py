@@ -57,6 +57,7 @@ if __name__ == '__main__':
 
             plt.plot(1.-np.array(fidelity_list)+1e-15, color=color, label='dep=%d, Niter=%d' % (depth, N_iter))
             plt.gca().set_yscale('log')
+            plt.gca().set_xscale('log')
 
             # plt.plot(np.array(fidelity_list), color=color, label='dep=%d, Niter=%d' % (depth, N_iter))
 
