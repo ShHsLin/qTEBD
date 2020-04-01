@@ -19,14 +19,15 @@ if __name__ == "__main__":
     import misc
     L = int(sys.argv[1])
     g = float(sys.argv[2])
+    h = float(sys.argv[3])
     J = 1.
 
     H = 'TFI'
 
     if H == 'TFI':
-        dir_path = 'data_te/1d_TFI_g%.1f/L%d/' % (g, L)
+        dir_path = 'data_te/1d_TFI_g%.4f_h%.4f/L%d/' % (g, h, L)
         # H = xx + gz
-        H = ed.get_H_Ising(g, J, L)
+        H = ed.get_H_Ising(g, h, J, L)
     elif H == 'XXZ':
         dir_path = 'data_te/1d_XXZ_g%.1f/L%d/' % (g, L)
         H = ed.get_H_XXZ(g, J, L)

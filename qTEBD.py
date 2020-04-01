@@ -28,41 +28,48 @@ except:
 import numpy as onp
 
 
-def get_H(L, J, g, Hamiltonian):
+def get_H(Hamiltonian, L, J, g, h=0):
     if Hamiltonian == 'TFI':
-        return get_H_TFI(L, J, g)
+        return get_H_TFI(L, J, g, h)
     elif Hamiltonian == 'XXZ':
         return get_H_XXZ(L, J, g)
     else:
         raise
 
-def get_H_TFI(L, J, g):
+def get_H_TFI(L, J, g, h=0):
     '''
     H_TFI = - J ZZ - g X
-    H_TFI = - J XX - g Z
+    H_TFI = - J XX - g Z - h X
     Return:
         H: list of local hamiltonian
     '''
     sx = np.array([[0, 1], [1, 0]])
     sz = np.array([[1, 0], [0, -1]])
-    id = np.eye(2)
+    eye2 = np.eye(2)
     d = 2
 
-    def h(gl, gr, J):
-        # return (-np.kron(sz, sz) * J - gr * np.kron(id, sx) - gl * np.kron(sx, id)).reshape([d] * 4)
-        return (-np.kron(sx, sx) * J - gr * np.kron(id, sz) - gl * np.kron(sz, id)).reshape([d] * 4)
+    def hamiltonian(gl, gr, hl, hr, J):
+        # return (-np.kron(sz, sz) * J - gr * np.kron(eye2, sx) - gl * np.kron(sx, eye2)).reshape([d] * 4)
+        return (-np.kron(sx, sx) * J - gr * np.kron(eye2, sz) - gl * np.kron(sz, eye2)
+                -hr * np.kron(eye2, sx) - hl * np.kron(sx, eye2)
+               ).reshape([d] * 4)
 
     H = []
     for j in range(L - 1):
         if j == 0:
             gl = g
+            hl = h
         else:
             gl = 0.5 * g
+            hl = 0.5 * h
         if j == L - 2:
             gr = 1. * g
+            hr = 1. * h
         else:
             gr = 0.5 * g
-        H.append(h(gl, gr, J))
+            hr = 0.5 * h
+
+        H.append(hamiltonian(gl, gr, hl, hr, J))
     return H
 
 def get_H_XXZ(L, J, g):
@@ -72,15 +79,15 @@ def get_H_XXZ(L, J, g):
     sx = np.array([[0, 1], [1, 0]])
     sy = np.array([[0, -1.j], [1.j, 0]])
     sz = np.array([[1, 0], [0, -1]])
-    id = np.eye(2)
+    eye2 = np.eye(2)
     d = 2
 
-    def h(g, J):
+    def hamiltonian(g, J):
         return (np.kron(sx, sx) * J + np.kron(sy, sy) * J + np.kron(sz, sz) * J * g ).reshape([d] * 4)
 
     H = []
     for j in range(L - 1):
-        H.append(h(g, J).real)
+        H.append(hamiltonian(g, J).real)
 
     return H
 

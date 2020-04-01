@@ -70,11 +70,11 @@ def gen_hamiltonian(sx_list, sy_list, sz_list, L):
 
     return H_xx, H_yy, H_zz, H_x, H_y, H_z
 
-def get_H_Ising(g, J, L):
+def get_H_Ising(g, h, J, L):
     sx_list, sy_list, sz_list  = gen_spin_operators(L)
     H_xx, H_yy, H_zz, H_x, H_y, H_z = gen_hamiltonian(sx_list, sy_list, sz_list, L)
-    H = J*H_xx + g*H_z
-    # H = J*H_zz + g*H_x
+    H = J*H_xx + g*H_z + h*H_x
+    # H = J*H_zz + g*H_x + h*H_z
     return H
 
 def get_H_XXZ(g, J, L):
@@ -83,8 +83,8 @@ def get_H_XXZ(g, J, L):
     H = J * (H_xx + H_yy + g * H_zz)
     return H
 
-def get_E_Ising_exact(g,J,L):
-    H = get_H_Ising(g, J, L)
+def get_E_Ising_exact(g, h, J, L):
+    H = get_H_Ising(g, h, J, L)
     e = arp.eigsh(H,k=1,which='SA',return_eigenvectors=False)
     return(e)
 
@@ -94,8 +94,9 @@ def get_E_XXZ_exact(g,J,L):
     return(e)
 
 def get_E_exact(g, J, L, H):
+    raise NotImplementedError
     if H == 'TFI':
-        return get_E_Ising_exact(g, J, L)
+        return get_E_Ising_exact(g, h, J, L)
     elif H == 'XXZ':
         return get_E_XXZ_exact(g, J, L)
     else:

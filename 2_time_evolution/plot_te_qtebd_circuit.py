@@ -13,14 +13,15 @@ color_set = [sns.color_palette("GnBu_d"),
 if __name__ == '__main__':
     L = int(sys.argv[1])
     g = float(sys.argv[2])
-    order = str(sys.argv[3])
+    h = float(sys.argv[3])
+    order = str(sys.argv[4])
     Hamiltonian = 'TFI'
 
     plt.close()
     fig=plt.figure(figsize=(8,10))
 
     ############################################
-    dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+    dir_path = 'data_te/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
 
 
     try:
@@ -33,7 +34,7 @@ if __name__ == '__main__':
         plt.plot(exact_dt[:], exact_sz[:,L//2],'--k', label='exact')
     except:
         chi = 128
-        dir_path = 'data_tebd/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+        dir_path = 'data_tebd/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
         filename = 'mps_chi%d_%s_sz_array.npy' % (chi, order)
 
         filename = 'mps_chi%d_%s_dt.npy' % (chi, order)
@@ -63,7 +64,7 @@ if __name__ == '__main__':
 
 
             try:
-                dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+                dir_path = 'data_te/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
 
                 filename = 'circuit_depth%d_Niter%d_%s_energy.npy' % (depth, N_iter, order)
                 path = dir_path + filename
@@ -116,7 +117,7 @@ if __name__ == '__main__':
             color = color_set[depth-1][int(idx*1.5)]
 
             try:
-                dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+                dir_path = 'data_te/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
 
                 filename = 'circuit_depth%d_Niter%d_%s_dt.npy' % (depth, N_iter, order)
                 path = dir_path + filename
@@ -144,7 +145,7 @@ if __name__ == '__main__':
     plt.setp(ax1.get_xticklabels(), fontsize=6)
     plt.ylabel('$< S_z^{L/2} >$')
     plt.legend()
-    plt.savefig('figure/time_evolv_%s/circuit_L%d_g%.1f_%s.png' % (Hamiltonian, L, g, order))
+    plt.savefig('figure/time_evolv_%s/circuit_L%d_g%.4f_h%.4f_%s.png' % (Hamiltonian, L, g, h, order))
     plt.show()
 
     plt.figure()

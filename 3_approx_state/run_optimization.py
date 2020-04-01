@@ -22,11 +22,12 @@ if __name__ == "__main__":
     L = int(sys.argv[1])
     J = 1.
     g = float(sys.argv[2])
-    depth = int(sys.argv[3])
-    N_iter = int(sys.argv[4])
-    order = str(sys.argv[5])
+    h = float(sys.argv[3])
+    depth = int(sys.argv[4])
+    N_iter = int(sys.argv[5])
+    order = str(sys.argv[6])
     ## the target state is corresponding to time T.
-    T = float(sys.argv[6])
+    T = float(sys.argv[7])
 
 
     save_each = 100
@@ -37,12 +38,12 @@ if __name__ == "__main__":
     assert order in ['1st', '2nd']
 
     Hamiltonian = 'TFI'
-    H_list  =  qTEBD.get_H(L, J, g, Hamiltonian)
+    H_list  =  qTEBD.get_H(Hamiltonian, L, J, g, h)
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
 
 
     ############### LOAD TARGET STATE ######################
-    mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.1f/L%d/wf_chi128_1st/' % (Hamiltonian, g, L)
+    mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi128_1st/' % (Hamiltonian, g, h, L)
     filename = mps_dir_path + 'T%.1f.pkl' % T
     target_mps = pickle.load(open(filename, 'rb'))
 
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     error_list.append(1. - fidelity_reached)
 
 
-    dir_path = 'data/1d_%s_g%.1f/L%d/T%.1f/' % (Hamiltonian, g, L, T)
+    dir_path = 'data/1d_%s_g%.4f_h%.4f/L%d/T%.1f/' % (Hamiltonian, g, h, L, T)
     # wf_dir_path = dir_path + 'wf_depth%d_Niter%d_%s/' % (depth, N_iter, order)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)

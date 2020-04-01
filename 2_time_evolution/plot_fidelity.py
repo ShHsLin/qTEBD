@@ -15,7 +15,8 @@ color_set = [sns.color_palette("GnBu_d"),
 if __name__ == '__main__':
     L = int(sys.argv[1])
     g = float(sys.argv[2])
-    order = str(sys.argv[3])
+    h = float(sys.argv[3])
+    order = str(sys.argv[4])
     Hamiltonian = 'TFI'
     product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
 
@@ -23,8 +24,8 @@ if __name__ == '__main__':
     fig=plt.figure(figsize=(6,8))
 
     ############################################
-    circuit_dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
-    mps_dir_path = 'data_tebd/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+    circuit_dir_path = 'data_te/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
+    mps_dir_path = 'data_tebd/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
 
     final_time = []
     for depth in range(1,5):

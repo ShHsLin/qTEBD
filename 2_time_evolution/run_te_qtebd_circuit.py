@@ -25,9 +25,10 @@ if __name__ == "__main__":
     L = int(sys.argv[1])
     J = 1.
     g = float(sys.argv[2])
-    depth = int(sys.argv[3])
-    N_iter = int(sys.argv[4])
-    order = str(sys.argv[5])
+    h = float(sys.argv[3])
+    depth = int(sys.argv[4])
+    N_iter = int(sys.argv[5])
+    order = str(sys.argv[6])
     total_t = 30.
     dt = 0.01
     save_each = int(0.1 // dt)
@@ -37,7 +38,7 @@ if __name__ == "__main__":
 
     assert order in ['1st', '2nd']
     Hamiltonian = 'TFI'
-    H_list  =  qTEBD.get_H(L, J, g, Hamiltonian)
+    H_list  =  qTEBD.get_H(Hamiltonian, L, J, g, h)
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
 
     U_list =  qTEBD.make_U(H_list, 1j * dt)
@@ -67,7 +68,7 @@ if __name__ == "__main__":
     Sz_array[0, :] = qTEBD.expectation_values_1_site(mps_of_layer[-1], Sz_list)
     ent_array[0, :] = qTEBD.get_entanglement(mps_of_last_layer)
 
-    dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+    dir_path = 'data_te/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
     wf_dir_path = dir_path + 'wf_depth%d_Niter%d_%s/' % (depth, N_iter, order)
     if not os.path.exists(wf_dir_path):
         os.makedirs(wf_dir_path)

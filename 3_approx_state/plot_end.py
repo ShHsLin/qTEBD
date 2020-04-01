@@ -7,10 +7,10 @@ import seaborn as sns
 
 if __name__ == '__main__':
     L = 31
-    exact_sz = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0/L31/mps_chi128_1st_sz_array.npy')
-    exact_ent = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0/L31/mps_chi128_1st_ent_array.npy')
-    exact_E = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0/L31/mps_chi128_1st_energy.npy')
-    exact_t = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0/L31/mps_chi128_1st_dt.npy')
+    exact_sz = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0000_h0.0000/L31/mps_chi128_1st_sz_array.npy')
+    exact_ent = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0000_h0.0000/L31/mps_chi128_1st_ent_array.npy')
+    exact_E = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0000_h0.0000/L31/mps_chi128_1st_energy.npy')
+    exact_t = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0000_h0.0000/L31/mps_chi128_1st_dt.npy')
 
     for depth in [2, 3, 4, 5]:
         fidelity_error_list = []
@@ -23,14 +23,14 @@ if __name__ == '__main__':
                 T = idx * 0.1
                 exact_idx = int(idx * 10)
 
-                f_data = np.load('data/1d_TFI_g1.0/L31/T%.1f/circuit_depth%d_Niter100000_1st_error.npy' % (T, depth))
+                f_data = np.load('data/1d_TFI_g1.0000_h0.0000/L31/T%.1f/circuit_depth%d_Niter100000_1st_error.npy' % (T, depth))
                 fidelity_error_list.append(f_data[-1])
 
-                sz_data = np.load('data/1d_TFI_g1.0/L31/T%.1f/circuit_depth%d_Niter100000_1st_sz_array.npy' % (T, depth))[-1]
+                sz_data = np.load('data/1d_TFI_g1.0000_h0.0000/L31/T%.1f/circuit_depth%d_Niter100000_1st_sz_array.npy' % (T, depth))[-1]
                 abs_diff_sz = np.abs(sz_data[L//2] - exact_sz[exact_idx, L//2])
                 diff_sz_list.append(abs_diff_sz)
 
-                ent_data = np.load('data/1d_TFI_g1.0/L31/T%.1f/circuit_depth%d_Niter100000_1st_ent_array.npy' % (T, depth))[-1, L//2]
+                ent_data = np.load('data/1d_TFI_g1.0000_h0.0000/L31/T%.1f/circuit_depth%d_Niter100000_1st_ent_array.npy' % (T, depth))[-1, L//2]
                 ent_list.append(ent_data)
                 t_list.append(T)
 
@@ -68,6 +68,9 @@ if __name__ == '__main__':
     plt.ylabel(u'entanglement')
     plt.xlabel(u'T')
     plt.legend()
+    ax1 = plt.subplot(3,1,1)
+    plt.title(u"$g = 1.0$")
+    plt.savefig('g1.0.png')
     plt.show()
 
 

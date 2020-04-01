@@ -17,9 +17,9 @@ See directory "1 ground state"
 MPS       |  Circuit
 :---------------------------:|:-------------------------:
 
-![](figure/time_evolv_TFI/tebd_mps_L31_g1.0_1st.png)
-![](figure/time_evolv_TFI/circuit_L31_g1.0_1st.png)
-![](figure/time_evolv_TFI/circuit_L31_g1.0_1st_1iter.png)
+![](figure/time_evolv_TFI/tebd_mps_L31_g1.0000_h0.0000_1st.png)
+![](figure/time_evolv_TFI/circuit_L31_g1.0000_h0.0000_1st.png)
+![](figure/time_evolv_TFI/circuit_L31_g1.0000_h0.0000_1st_1iter.png)
 
 
 ## fidelity

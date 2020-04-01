@@ -32,8 +32,9 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
     L = int(sys.argv[1])
     g = float(sys.argv[2])
-    chi = int(sys.argv[3])
-    order = str(sys.argv[4])
+    h = float(sys.argv[3])
+    chi = int(sys.argv[4])
+    order = str(sys.argv[5])
 
     assert order in ['1st', '2nd']
     Hamiltonian = 'TFI'
@@ -42,10 +43,10 @@ if __name__ == "__main__":
 
     J = 1.
     dt = 0.01
-    save_each = int(0.1 // dt)
-    total_t = 30
+    save_each = int(0.5 / dt)
+    total_t = 100
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
-    H_list =  qTEBD.get_H(L, J, g, Hamiltonian)
+    H_list =  qTEBD.get_H(Hamiltonian, L, J, g, h)
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
     idx = 0
 
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     U_list =  qTEBD.make_U(H_list, 1j * dt)
     U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
 
-    wf_dir_path = 'data_tebd/1d_%s_g%.1f/L%d/wf_chi%d_%s/' % (Hamiltonian, g, L, chi, order)
+    wf_dir_path = 'data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi%d_%s/' % (Hamiltonian, g, h, L, chi, order)
     if not os.path.exists(wf_dir_path):
         os.makedirs(wf_dir_path)
 
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     Sz_array = Sz_array[:num_data, :]
     ent_array = ent_array[:num_data, :]
 
-    dir_path = 'data_tebd/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+    dir_path = 'data_tebd/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 

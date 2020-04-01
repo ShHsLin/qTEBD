@@ -5,14 +5,15 @@ import sys, os, misc
 if __name__ == '__main__':
     L = int(sys.argv[1])
     g = float(sys.argv[2])
-    order = str(sys.argv[3])
+    h = float(sys.argv[3])
+    order = str(sys.argv[4])
     Hamiltonian = 'TFI'
 
     plt.close()
     fig=plt.figure(figsize=(6,9))
 
     ############################################
-    dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+    dir_path = 'data_te/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
     try:
         filename = 'ed_sz_array.npy'
         exact_sz = np.load(dir_path + filename)
@@ -25,7 +26,7 @@ if __name__ == '__main__':
         pass
 
     for chi in [2,4,8,32]:
-        dir_path = 'data_te/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+        dir_path = 'data_te/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
 
         filename = 'mps_chi%d_%s_energy.npy' % (chi, order)
         path = dir_path + filename
@@ -76,6 +77,6 @@ if __name__ == '__main__':
     plt.ylabel('$< S_z^{L/2} >$')
     plt.legend()
     # plt.savefig('figure/finite_L%d_chi%d.png' % (L, chi))
-    plt.savefig('figure/time_evolv_%s/mps_L%d_g%.1f_%s.png' % (Hamiltonian, L, g, order))
+    plt.savefig('figure/time_evolv_%s/mps_L%d_g%.4f_h%.4f_%s.png' % (Hamiltonian, L, g, h, order))
     # plt.savefig('figure/finite_L%d.png' % (L))
     plt.show()

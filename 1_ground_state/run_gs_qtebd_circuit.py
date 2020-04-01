@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     assert order in ['1st', '2nd']
     Hamiltonian = 'XXZ'
-    H_list  =  qTEBD.get_H(L, J, g, Hamiltonian)
+    H_list  =  qTEBD.get_H(Hamiltonian, L, J, g)
 
     my_circuit = []
 

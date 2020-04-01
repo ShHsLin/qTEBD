@@ -43,7 +43,7 @@ if __name__ == "__main__":
     N_iter = 1
 
     A_list  =  qTEBD.init_mps(L,chi,2)
-    H_list  =  qTEBD.get_H(L, J, g, Hamiltonian)
+    H_list  =  qTEBD.get_H(Hamiltonian, L, J, g)
     t_list = [0]
     E_list = [np.sum(qTEBD.expectation_values(A_list, H_list))]
     update_error_list = [0.]
