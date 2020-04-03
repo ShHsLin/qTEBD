@@ -7,10 +7,15 @@ import seaborn as sns
 
 if __name__ == '__main__':
     L = 31
-    exact_sz = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0000_h0.0000/L31/mps_chi128_1st_sz_array.npy')
-    exact_ent = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0000_h0.0000/L31/mps_chi128_1st_ent_array.npy')
-    exact_E = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0000_h0.0000/L31/mps_chi128_1st_energy.npy')
-    exact_t = np.load('../2_time_evolution/data_tebd/1d_TFI_g1.0000_h0.0000/L31/mps_chi128_1st_dt.npy')
+    g = 1.4
+    h = 0.9045
+    chi = 32
+    order = '1st'
+
+    exact_sz = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_sz_array.npy' % (g, h, chi))
+    exact_ent = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_ent_array.npy' % (g, h, chi))
+    exact_E = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_energy.npy' % (g, h, chi))
+    exact_t = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_dt.npy' % (g, h, chi))
 
     for depth in [2, 3, 4, 5]:
         fidelity_error_list = []
@@ -18,19 +23,19 @@ if __name__ == '__main__':
         ent_list = []
         t_list = []
 
-        for idx in range(0,50):
+        for idx in range(0,100):
             try:
                 T = idx * 0.1
                 exact_idx = int(idx * 10)
 
-                f_data = np.load('data/1d_TFI_g1.0000_h0.0000/L31/T%.1f/circuit_depth%d_Niter100000_1st_error.npy' % (T, depth))
+                f_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/T%.1f/circuit_depth%d_Niter100000_1st_error.npy' % (g, h, T, depth))
                 fidelity_error_list.append(f_data[-1])
 
-                sz_data = np.load('data/1d_TFI_g1.0000_h0.0000/L31/T%.1f/circuit_depth%d_Niter100000_1st_sz_array.npy' % (T, depth))[-1]
+                sz_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/T%.1f/circuit_depth%d_Niter100000_1st_sz_array.npy' % (g, h, T, depth))[-1]
                 abs_diff_sz = np.abs(sz_data[L//2] - exact_sz[exact_idx, L//2])
                 diff_sz_list.append(abs_diff_sz)
 
-                ent_data = np.load('data/1d_TFI_g1.0000_h0.0000/L31/T%.1f/circuit_depth%d_Niter100000_1st_ent_array.npy' % (T, depth))[-1, L//2]
+                ent_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/T%.1f/circuit_depth%d_Niter100000_1st_ent_array.npy' % (g, h, T, depth))[-1, L//2]
                 ent_list.append(ent_data)
                 t_list.append(T)
 
@@ -44,6 +49,33 @@ if __name__ == '__main__':
         plt.semilogy(t_list, diff_sz_list, 'x--', label='depth=%d' % depth)
         ax3 = plt.subplot(3,1,3, sharex=ax1)
         plt.plot(t_list, ent_list, 'x--', label='depth=%d' % depth)
+
+#     for depth in [2, 3, 4, 5]:
+#         try:
+#             chi = 2 ** depth
+#             fidelity_error_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_error.npy' % (g, h, chi, order))
+#             # sz_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/circuit_depth%d_Niter100000_1st_sz_array.npy' % (g, h, depth))[-1]
+#             # abs_diff_sz = np.abs(sz_data[L//2] - exact_sz[exact_idx, L//2])
+#             # diff_sz_list.append(abs_diff_sz)
+# 
+#             ent_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_ent_array.npy' % (g, h, chi, order))[-1, L//2]
+#             t_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_dt.npy' % (g, h, chi, order))
+# 
+#         except Exception as e:
+#             print(e)
+# 
+# 
+#         ax1 = plt.subplot(3,1,1)
+#         plt.semilogy(t_list, fidelity_error_list, '--', label='chi=%d' % chi)
+#         # ax2 = plt.subplot(3,1,2, sharex=ax1)
+#         # plt.semilogy(t_list, diff_sz_list, 'x--', label='depth=%d' % depth)
+#         # ax3 = plt.subplot(3,1,3, sharex=ax1)
+#         # plt.plot(t_list, ent_list, 'x--', label='depth=%d' % depth)
+
+
+
+
+
 
 
     ax3 = plt.subplot(3,1,3, sharex=ax1)

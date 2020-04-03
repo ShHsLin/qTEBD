@@ -43,7 +43,12 @@ if __name__ == "__main__":
 
 
     ############### LOAD TARGET STATE ######################
-    mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi128_1st/' % (Hamiltonian, g, h, L)
+    if np.isclose(g, 1.0):
+        chi = 128
+    else:
+        chi = 32
+
+    mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi%d_1st/' % (Hamiltonian, g, h, L, chi)
     filename = mps_dir_path + 'T%.1f.pkl' % T
     target_mps = pickle.load(open(filename, 'rb'))
 
