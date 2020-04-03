@@ -1,9 +1,12 @@
 
-# TFI g=1.0
+H = - XX - g Z - h X
+
+# Ising model with g=1.0, h=0.
 ### Circuit approximating chi=128
 ![](g1.0000_h0.0000.png)
 
 
+# Ising model with g=1.4, h=0.9045
 ### Circuit approximating chi=32
 ![](g1.4000_h0.9045.png)
 
