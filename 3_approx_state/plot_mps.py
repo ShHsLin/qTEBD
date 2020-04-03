@@ -7,8 +7,8 @@ import seaborn as sns
 
 if __name__ == '__main__':
     L = 31
-    g = 1.4
-    h = 0.9045
+    g = 1.0
+    h = 0. # 9045
     chi = 128
     order = '1st'
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     plt.xlabel(u'T')
     plt.legend()
     plt.title("Truncating from MPS with $\chi=128$")
-    plt.savefig('mps.png')
+    plt.savefig('mps_g%.4f_h%.4f.png' % (g, h))
     plt.show()
 
 

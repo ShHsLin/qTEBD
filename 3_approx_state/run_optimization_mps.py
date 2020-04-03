@@ -16,10 +16,6 @@ if __name__ == "__main__":
     new_chi = int(sys.argv[5])
 
 
-    save_each = 100
-    tol = 1e-12
-    cov_crit = tol * 0.1
-
     assert order in ['1st', '2nd']
 
     Hamiltonian = 'TFI'
