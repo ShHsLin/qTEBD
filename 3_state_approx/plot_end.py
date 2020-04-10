@@ -4,11 +4,17 @@ import numpy as np
 import sys
 import seaborn as sns
 # sns.set()
+color_set = [sns.color_palette("GnBu_d"),
+             sns.color_palette("Blues"),
+             sns.cubehelix_palette(8),
+             sns.light_palette("green"),
+            ]
+
 
 if __name__ == '__main__':
     L = 31
-    g = 1.4
-    h = 0.9045
+    g = float(sys.argv[1]) # 1.4
+    h = float(sys.argv[2]) # 0.9045
     chi = 32
     order = '1st'
 
@@ -17,7 +23,8 @@ if __name__ == '__main__':
     exact_E = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_energy.npy' % (g, h, chi))
     exact_t = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_dt.npy' % (g, h, chi))
 
-    for depth in [2, 3, 4, 5]:
+    for idx, depth in enumerate([2, 3, 4, 5, 6, 7, 8]):
+        color = color_set[2][idx]
         fidelity_error_list = []
         diff_sz_list = []
         ent_list = []
@@ -44,36 +51,39 @@ if __name__ == '__main__':
 
 
         ax1 = plt.subplot(3,1,1)
-        plt.semilogy(t_list, fidelity_error_list, 'x--', label='depth=%d' % depth)
+        plt.semilogy(t_list, fidelity_error_list, 'x--', color=color, label='depth=%d' % depth)
         ax2 = plt.subplot(3,1,2, sharex=ax1)
-        plt.semilogy(t_list, diff_sz_list, 'x--', label='depth=%d' % depth)
+        plt.semilogy(t_list, diff_sz_list, 'x--', color=color, label='depth=%d' % depth)
         ax3 = plt.subplot(3,1,3, sharex=ax1)
-        plt.plot(t_list, ent_list, 'x--', label='depth=%d' % depth)
+        plt.plot(t_list, ent_list, 'x--', color=color, label='depth=%d' % depth)
 
-#     for depth in [2, 3, 4, 5]:
-#         try:
-#             chi = 2 ** depth
-#             fidelity_error_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_error.npy' % (g, h, chi, order))
-#             # sz_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/circuit_depth%d_Niter100000_1st_sz_array.npy' % (g, h, depth))[-1]
-#             # abs_diff_sz = np.abs(sz_data[L//2] - exact_sz[exact_idx, L//2])
-#             # diff_sz_list.append(abs_diff_sz)
-# 
-#             ent_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_ent_array.npy' % (g, h, chi, order))[-1, L//2]
-#             t_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_dt.npy' % (g, h, chi, order))
-# 
-#         except Exception as e:
-#             print(e)
-# 
-# 
-#         ax1 = plt.subplot(3,1,1)
-#         plt.semilogy(t_list, fidelity_error_list, '--', label='chi=%d' % chi)
-#         # ax2 = plt.subplot(3,1,2, sharex=ax1)
-#         # plt.semilogy(t_list, diff_sz_list, 'x--', label='depth=%d' % depth)
-#         # ax3 = plt.subplot(3,1,3, sharex=ax1)
-#         # plt.plot(t_list, ent_list, 'x--', label='depth=%d' % depth)
+    # for idx, depth in enumerate([2, 3, 4, 5, 6, 7, 8]):
+    #     color = color_set[2][idx]
+    #     try:
+    #         chi = 2 ** depth
+    #         fidelity_error_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_error.npy' % (g, h, chi, order))
+    #         # sz_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/circuit_depth%d_Niter100000_1st_sz_array.npy' % (g, h, depth))[-1]
+    #         # abs_diff_sz = np.abs(sz_data[L//2] - exact_sz[exact_idx, L//2])
+    #         # diff_sz_list.append(abs_diff_sz)
+
+    #         ent_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_ent_array.npy' % (g, h, chi, order))[-1, L//2]
+    #         t_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_dt.npy' % (g, h, chi, order))
+
+    #     except Exception as e:
+    #         print(e)
 
 
+    #     ax1 = plt.subplot(3,1,1)
+    #     plt.semilogy(t_list, fidelity_error_list, '-', color=color, label='chi=%d' % chi)
+    #     # ax2 = plt.subplot(3,1,2, sharex=ax1)
+    #     # plt.semilogy(t_list, diff_sz_list, 'x--', label='depth=%d' % depth)
+    #     # ax3 = plt.subplot(3,1,3, sharex=ax1)
+    #     # plt.plot(t_list, ent_list, 'x--', label='depth=%d' % depth)
 
+
+
+    # ax1 = plt.subplot(3,1,1)
+    # plt.legend()
 
 
 

@@ -62,6 +62,13 @@ if __name__ == "__main__":
         error_list.append(1. - fidelity_reached)
         t_list.append(T)
 
+        trunc_mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.4f_h%.4f/L%d/trunc_wf_chi%d_1st/' % (Hamiltonian, g, h, L, new_chi)
+        if not os.path.exists(trunc_mps_dir_path):
+            os.makedirs(trunc_mps_dir_path)
+
+        filename = trunc_mps_dir_path + 'T%.1f.pkl' % T
+        pickle.dump(trunc_mps, open(filename, 'wb'))
+
 
 
     dir_path = 'data/1d_%s_g%.4f_h%.4f/L%d/approx_mps/' % (Hamiltonian, g, h, L)
