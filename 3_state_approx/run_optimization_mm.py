@@ -28,7 +28,9 @@ if __name__ == "__main__":
     order = str(sys.argv[6])
     ## the target state is corresponding to time T.
     T = float(sys.argv[7])
+    schedule = str(sys.argv[8])
 
+    assert schedule in ['linear', 'exponential']
 
     save_each = 100
     tol = 1e-12
@@ -43,10 +45,7 @@ if __name__ == "__main__":
 
 
     ############### LOAD TARGET STATE ######################
-    if np.isclose(g, 1.0):
-        chi = 128
-    else:
-        chi = 32
+    chi = 32
 
     mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi%d_1st/' % (Hamiltonian, g, h, L, chi)
     filename = mps_dir_path + 'T%.1f.pkl' % T
@@ -70,7 +69,9 @@ if __name__ == "__main__":
 
 
     ################# INITIALIZATION  ######################
-    init_file_path = 'mm_init/1d_%s_g%.4f_h%.4f/L%d/init_files/%d_layers_T%.1f.pkl' % (Hamiltonian, g, h, L, depth, T)
+    init_file_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/init_files/%d_layers_T%.1f.pkl' % (schedule, Hamiltonian,
+                                                                                             g, h, L, chi, depth,
+                                                                                             T)
     product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
 
     # for dep_idx in range(depth):
@@ -99,12 +100,17 @@ if __name__ == "__main__":
     print(" initialized fidelity : ", fidelity_reached)
 
 
-    dir_path = 'mm_init/1d_%s_g%.4f_h%.4f/L%d/T%.1f/' % (Hamiltonian, g, h, L, T)
-    # wf_dir_path = dir_path + 'wf_depth%d_Niter%d_%s/' % (depth, N_iter, order)
+    dir_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/T%.1f/' % (Hamiltonian, g, h, L, chi, T)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
     running_idx = len(E_list)
+    if misc.check_circuit(dir_path, depth, N_iter, order):
+        print("Found finished circuit; quit")
+        exit()
+    else:
+        pass
+
     try:
         tuple_loaded = misc.load_circuit(dir_path, depth, N_iter, order)
         running_idx, my_circuit, E_list, t_list, error_list, Sz_array, ent_array, num_iter_array = tuple_loaded

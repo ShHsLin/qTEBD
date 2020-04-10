@@ -124,6 +124,10 @@ def save_circuit(dir_path, depth, N_iter, order,
 
     return
 
+def check_circuit(dir_path, depth, N_iter, order):
+    filename = 'circuit_depth%d_Niter%d_%s_circuit.pkl' % (depth, N_iter, order)
+    path = dir_path + filename
+    return os.path.exists(path)
 
 def load_circuit(dir_path, depth, N_iter, order):
     filename = 'circuit_depth%d_Niter%d_%s_circuit_tmp.pkl' % (depth, N_iter, order)
