@@ -100,7 +100,7 @@ if __name__ == "__main__":
     print(" initialized fidelity : ", fidelity_reached)
 
 
-    dir_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/T%.1f/' % (Hamiltonian, g, h, L, chi, T)
+    dir_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/T%.1f/' % (schedule, Hamiltonian, g, h, L, chi, T)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
