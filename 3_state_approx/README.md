@@ -34,17 +34,10 @@ H = - XX - g Z - h X
 ![](../2_time_evolution/figure/time_evolv_TFI/tebd_mps_L31_g1.4000_h0.0000_1st.png)
 
 
-# Ising model with g=1.4, h=0.1
-### Circuit approximating chi=32
-![](g1.4000_h0.1000.png)
+h=0.1       | h=0.5
+:---------------------------:|:-------------------------:
+Circuit approximating chi=32       | Circuit approximating chi=32
+![](g1.4000_h0.1000.png)    |  ![](g1.4000_h0.5000.png)
+MPS tebd result  |  MPS tebd result
+![](../2_time_evolution/figure/time_evolv_TFI/tebd_mps_L31_g1.4000_h0.1000_1st.png)  |  ![](../2_time_evolution/figure/time_evolv_TFI/tebd_mps_L31_g1.4000_h0.5000_1st.png)
 
-### MPS tebd result
-![](../2_time_evolution/figure/time_evolv_TFI/tebd_mps_L31_g1.4000_h0.1000_1st.png)
-
-
-# Ising model with g=1.4, h=0.5
-### Circuit approximating chi=32
-![](g1.4000_h0.5000.png)
-
-### MPS tebd result
-![](../2_time_evolution/figure/time_evolv_TFI/tebd_mps_L31_g1.4000_h0.5000_1st.png)
