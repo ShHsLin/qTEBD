@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
 
 
-    dir_path = 'data/1d_%s_g%.4f_h%.4f/L%d/approx_mps/' % (Hamiltonian, g, h, L)
+    dir_path = 'data/1d_%s_g%.4f_h%.4f/L%d_chi%d/approx_mps/' % (Hamiltonian, g, h, L, chi)
     # wf_dir_path = dir_path + 'wf_depth%d_Niter%d_%s/' % (depth, N_iter, order)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)

@@ -35,14 +35,14 @@ if __name__ == '__main__':
                 T = idx * 0.1
                 exact_idx = int(idx * 10)
 
-                f_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/T%.1f/circuit_depth%d_Niter100000_1st_error.npy' % (g, h, T, depth))
+                f_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31_chi%d/T%.1f/circuit_depth%d_Niter100000_1st_error.npy' % (g, h, chi, T, depth))
                 fidelity_error_list.append(f_data[-1])
 
-                sz_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/T%.1f/circuit_depth%d_Niter100000_1st_sz_array.npy' % (g, h, T, depth))[-1]
+                sz_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31_chi%d/T%.1f/circuit_depth%d_Niter100000_1st_sz_array.npy' % (g, h, chi, T, depth))[-1]
                 abs_diff_sz = np.abs(sz_data[L//2] - exact_sz[exact_idx, L//2])
                 diff_sz_list.append(abs_diff_sz)
 
-                ent_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31/T%.1f/circuit_depth%d_Niter100000_1st_ent_array.npy' % (g, h, T, depth))[-1, L//2]
+                ent_data = np.load('data/1d_TFI_g%.4f_h%.4f/L31_chi%d/T%.1f/circuit_depth%d_Niter100000_1st_ent_array.npy' % (g, h, chi, T, depth))[-1, L//2]
                 ent_list.append(ent_data)
                 t_list.append(T)
 
