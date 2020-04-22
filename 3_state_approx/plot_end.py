@@ -23,14 +23,14 @@ if __name__ == '__main__':
     exact_E = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_energy.npy' % (g, h, chi))
     exact_t = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_dt.npy' % (g, h, chi))
 
-    for idx, depth in enumerate([2, 3, 4, 5, 6, 7, 8]):
+    for idx, depth in enumerate([2, 3, 4, 5, 6,]):
         color = color_set[2][idx]
         fidelity_error_list = []
         diff_sz_list = []
         ent_list = []
         t_list = []
 
-        for idx in range(0,100):
+        for idx in range(0, 41):
             try:
                 T = idx * 0.1
                 exact_idx = int(idx * 10)
