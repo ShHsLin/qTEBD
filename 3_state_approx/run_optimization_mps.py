@@ -2,8 +2,7 @@ import numpy as np
 import pickle
 import os, sys
 sys.path.append('..')
-import qTEBD, misc
-import mps_func
+import qTEBD, misc, mps_func
 
 if __name__ == "__main__":
     np.random.seed(1)

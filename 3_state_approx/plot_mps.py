@@ -41,7 +41,7 @@ if __name__ == '__main__':
     plt.xlabel(u'T')
     plt.legend()
     plt.title("Truncating from MPS with $\chi=128$")
-    plt.savefig('mps_g%.4f_h%.4f.png' % (g, h))
+    plt.savefig('figure/mps_g%.4f_h%.4f.png' % (g, h))
     plt.show()
 
 

@@ -112,7 +112,7 @@ if __name__ == '__main__':
     plt.legend()
     ax1 = plt.subplot(3,1,1)
     plt.title(u"$g = %.4f, h = %.4f$" % (g, h))
-    plt.savefig('g%.4f_h%.4f.png' % (g, h))
+    plt.savefig('figure/g%.4f_h%.4f.png' % (g, h))
     plt.show()
 
 
