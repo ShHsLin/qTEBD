@@ -7,9 +7,9 @@ import seaborn as sns
 
 if __name__ == '__main__':
     L = 31
-    g = 1.0
-    h = 0. # 9045
-    chi = 128
+    g = float(sys.argv[1])
+    h = float(sys.argv[2])
+    chi = int(sys.argv[3])
     order = '1st'
 
     exact_sz = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_sz_array.npy' % (g, h, chi))
@@ -19,17 +19,17 @@ if __name__ == '__main__':
 
     for depth in [2, 3, 4, 5]:
         try:
-            chi = 2 ** depth
-            fidelity_error_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_error.npy' % (g, h, chi, order))
+            new_chi = 2 ** depth
+            fidelity_error_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31_chi%d/approx_mps/mps_chi%d_%s_error.npy' % (g, h, chi, new_chi, order))
 
-            ent_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_ent_array.npy' % (g, h, chi, order))[-1, L//2]
-            t_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31/approx_mps/mps_chi%d_%s_dt.npy' % (g, h, chi, order))
+            ent_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31_chi%d/approx_mps/mps_chi%d_%s_ent_array.npy' % (g, h, chi, new_chi, order))[-1, L//2]
+            t_list = np.load('data/1d_TFI_g%.4f_h%.4f/L31_chi%d/approx_mps/mps_chi%d_%s_dt.npy' % (g, h, chi, new_chi, order))
+            plt.semilogy(t_list, fidelity_error_list, '--', label=u'$\chi_{trunc}=%d$' % new_chi)
 
         except Exception as e:
             print(e)
 
 
-        plt.semilogy(t_list, fidelity_error_list, '--', label='chi=%d' % chi)
 
 
 
@@ -40,8 +40,8 @@ if __name__ == '__main__':
 
     plt.xlabel(u'T')
     plt.legend()
-    plt.title("Truncating from MPS with $\chi=128$")
-    plt.savefig('figure/mps_g%.4f_h%.4f.png' % (g, h))
+    plt.title("Truncating from MPS with $\chi=%d$" % chi)
+    # plt.savefig('figure/mps_g%.4f_h%.4f.png' % (g, h))
     plt.show()
 
 

@@ -13,6 +13,10 @@ if __name__ == "__main__":
     h = float(sys.argv[3])
     order = str(sys.argv[4])
     new_chi = int(sys.argv[5])
+    try:
+        chi = int(sys.argv[6])
+    except:
+        chi = 128
 
 
     assert order in ['1st', '2nd']
@@ -22,7 +26,7 @@ if __name__ == "__main__":
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
 
 
-    total_steps = 100
+    total_steps = 1000
     E_list = []
     Sz_array = np.zeros([total_steps, L])
     ent_array = np.zeros([total_steps, L-1])
@@ -33,11 +37,12 @@ if __name__ == "__main__":
         T = T_idx * 0.1
 
         ############### LOAD TARGET STATE ######################
-        chi = 128
-
-        mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi%d_1st/' % (Hamiltonian, g, h, L, chi)
-        filename = mps_dir_path + 'T%.1f.pkl' % T
-        target_mps = pickle.load(open(filename, 'rb'))
+        try:
+            mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi%d_1st/' % (Hamiltonian, g, h, L, chi)
+            filename = mps_dir_path + 'T%.1f.pkl' % T
+            target_mps = pickle.load(open(filename, 'rb'))
+        except:
+            break
 
         ############### SET UP INITIALIZATION #################
         # target_mps in left canonical form
@@ -52,11 +57,13 @@ if __name__ == "__main__":
         print("trunc_error (var) : ", trunc_error_)
 
         trunc_mps = mps_func.lpr_2_plr(trunc_mps_)
+        qTEBD.left_canonicalize(trunc_mps, no_trunc=True)
 
 
         E_list.append(np.sum(qTEBD.expectation_values(trunc_mps, H_list)))
         Sz_array[T_idx, :] = qTEBD.expectation_values_1_site(trunc_mps, Sz_list)
         ent_array[T_idx, :] = qTEBD.get_entanglement(trunc_mps)
+        print("ENTANGLEMENT !!!!! : ", qTEBD.get_entanglement(trunc_mps))
         fidelity_reached = np.abs(qTEBD.overlap(target_mps, trunc_mps))**2
         error_list.append(1. - fidelity_reached)
         t_list.append(T)
@@ -68,6 +75,10 @@ if __name__ == "__main__":
         filename = trunc_mps_dir_path + 'T%.1f.pkl' % T
         pickle.dump(trunc_mps, open(filename, 'wb'))
 
+    num_data = len(t_list)
+    assert num_data > 0
+    Sz_array = Sz_array[:num_data, :]
+    ent_array = ent_array[:num_data, :]
 
 
     dir_path = 'data/1d_%s_g%.4f_h%.4f/L%d_chi%d/approx_mps/' % (Hamiltonian, g, h, L, chi)
