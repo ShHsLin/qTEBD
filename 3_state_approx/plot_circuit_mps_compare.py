@@ -24,7 +24,7 @@ if __name__ == '__main__':
     plot_topic = 'f'
     num_frame = 2
     if num_frame == 2:
-        fig, (ax1, ax2) = plt.subplots(2, 1, sharex='row')
+        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     else:
         fig, ax1 = plt.subplots(1, 1, sharex='row');    ax2 = ax1
 
@@ -143,7 +143,7 @@ if __name__ == '__main__':
         ax2.legend(fontsize=6)
         plt.savefig('figure/cf%d_mps_circuit_%s_g%.4f_h%.4f.svg' % (num_frame, plot_topic, g, h))
         plt.savefig('figure/cf%d_mps_circuit_%s_g%.4f_h%.4f.pdf' % (num_frame, plot_topic, g, h))
-        # plt.show()
+        plt.show()
     elif plot_topic == 'ent':
         # ax1 = plt.subplot(2,1,1)
         ax1.set_title(u"$g = %.4f, h = %.4f$" % (g, h))
@@ -162,6 +162,6 @@ if __name__ == '__main__':
 
         plt.savefig('figure/cf%d_mps_circuit_%s_g%.4f_h%.4f.svg' % (num_frame, plot_topic, g, h))
         plt.savefig('figure/cf%d_mps_circuit_%s_g%.4f_h%.4f.pdf' % (num_frame, plot_topic, g, h))
-        # plt.show()
+        plt.show()
 
 
