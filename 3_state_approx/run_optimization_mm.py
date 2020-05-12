@@ -30,7 +30,7 @@ if __name__ == "__main__":
     T = float(sys.argv[7])
     schedule = str(sys.argv[8])
 
-    assert schedule in ['linear', 'exponential']
+    assert schedule in ['linear', 'exponential', 'best_init']
 
     save_each = 100
     tol = 1e-12
@@ -69,9 +69,15 @@ if __name__ == "__main__":
 
 
     ################# INITIALIZATION  ######################
-    init_file_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/init_files/%d_layers_T%.1f.pkl' % (schedule, Hamiltonian,
-                                                                                             g, h, L, chi, depth,
-                                                                                             T)
+    if schedule not in ['best_init']:
+        init_file_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/init_files/%d_layers_T%.1f.pkl' % (schedule, Hamiltonian,
+                                                                                                 g, h, L, chi, depth,
+                                                                                                 T)
+    else:
+        init_file_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/init_files/%d_layers_T%.1f.npy' % (schedule, Hamiltonian,
+                                                                                                 g, h, L, chi, depth,
+                                                                                                 T)
+
     product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
 
     # for dep_idx in range(depth):
@@ -81,7 +87,11 @@ if __name__ == "__main__":
     #     my_circuit.append([t.copy() for t in U_list])
     #     current_depth = dep_idx + 1
 
-    my_circuit = pickle.load(open(init_file_path, 'rb'))
+    if schedule not in ['best_init']:
+        my_circuit = pickle.load(open(init_file_path, 'rb'))
+    else:
+        my_circuit = np.load(init_file_path)
+
     for layer in my_circuit:
         for idx, U in enumerate(layer):
             # layer[idx] = U.reshape([4, 4]).T.conj().reshape([2, 2, 2, 2])

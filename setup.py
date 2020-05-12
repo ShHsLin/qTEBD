@@ -13,7 +13,7 @@ from matplotlib import ticker ## to control the number of tick in plot
 from matplotlib.ticker import LinearLocator
 from matplotlib.ticker import FormatStrFormatter
 
-x=22
+x=25
 params = {'legend.fontsize':34-x,#'xx-large', 
                     # 'figure.figsize': (15,6),
                     'axes.labelsize': 36-x,
