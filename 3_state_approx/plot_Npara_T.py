@@ -22,13 +22,29 @@ def depth_2_Npara(depth):
     Npara = depth * (L-1) * 16
     return Npara
 
-def chi_2_Npara(chi):
-    L=31
-    Npara = 2 * L * chi**2
+def chi_2_Npara(chi, L=31):
+    Npara_old = 2 * L * chi**2
+
+    bond_list = []
+    for idx in range(L+1):
+        bond_list.append(np.amin([2**(L-idx),2**idx, chi]))
+
+    assert len(bond_list) == (L+1)
+    bond_list = np.array(bond_list)
+    Npara = np.sum(bond_list[:-1]*bond_list[1:]*2)
+    # print("chi=", chi, "new estimate: ", Npara, " old estimate : ", Npara_old, "diff : ", (Npara-Npara_old)/Npara)
     return Npara
 
 
+
 if __name__ == '__main__':
+    # a=452.011, b=1.75265, c=-952.504
+    # a=477.518, b=1.73049, c=-1064.32
+    # a=877.347, b=1.38, c=-1902.49
+    mps_para = [(335.921, 1.85596, -649.48),
+                (330.995, 1.8545, -628.83),
+                (344.538, 1.66872, -423.661)]
+
 
     c_para = [(987.876, 10.9262),
               (1335.34, -184.082),
@@ -98,11 +114,10 @@ if __name__ == '__main__':
 
 
     ax1.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
-    # a=452.011, b=1.75265, c=-952.504
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax1.plot(x_data, exp_f(x_data, 452.011, 1.75265, -952.504), '--', color=current_palette[1]
+    ax1.plot(x_data, exp_f(x_data, *mps_para[0]), '--', color=current_palette[1]
             )
 
 
@@ -175,11 +190,10 @@ if __name__ == '__main__':
 
 
     ax2.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
-    # a=477.518, b=1.73049, c=-1064.32
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax2.plot(x_data, exp_f(x_data, 477.518, 1.73049, -1064.32), '--', color=current_palette[1]
+    ax2.plot(x_data, exp_f(x_data, *mps_para[1]), '--', color=current_palette[1]
             )
 
 
@@ -252,11 +266,10 @@ if __name__ == '__main__':
 
 
     ax3.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
-    # a=877.347, b=1.38, c=-1902.49
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax3.plot(x_data, exp_f(x_data, 877.347, 1.38, -1902.49), '--', color=current_palette[1]
+    ax3.plot(x_data, exp_f(x_data, *mps_para[2]), '--', color=current_palette[1]
             )
 
 

@@ -29,9 +29,18 @@ def depth_2_Npara(depth):
     Npara = depth * (L-1) * 16
     return Npara
 
-def chi_2_Npara(chi):
-    L=31
-    Npara = 2 * L * chi**2
+def chi_2_Npara(chi, L=31):
+    Npara_old = 2 * L * chi**2
+
+    bond_list = []
+    for idx in range(L+1):
+        bond_list.append(np.amin([2**(L-idx),2**idx, chi]))
+
+    assert len(bond_list) == (L+1)
+    bond_list = np.array(bond_list)
+    Npara = np.sum(bond_list[:-1]*bond_list[1:]*2)
+    # print("chi=", chi, "new estimate: ", Npara, " old estimate : ", Npara_old, "diff : ", (Npara-Npara_old)/Npara)
+
     return Npara
 
 if __name__ == '__main__':
@@ -77,17 +86,16 @@ if __name__ == '__main__':
     mps_list.append( (2.77, chi_2_Npara(30)) )
     mps_list.append( (2.80, chi_2_Npara(31)) )
 
-
-
     mps_list.append( (2.83, chi_2_Npara(32)) )
 
     ax1.plot(*zip(*mps_list), 'o', markersize=markersize, color=color_dot, label='mps')
 
     x_data, y_data = zip(*mps_list)
-    x_data = np.array(x_data)
-    y_data = np.array(y_data)
+    x_data = np.array(x_data)[[0,2,6,14,30]]
+    y_data = np.array(y_data)[[0,2,6,14,30]]
 
     popt, pcov = curve_fit(exp_f, x_data, y_data)
+    x_data = np.arange(x_data[0], x_data[-1]+0.01, (x_data[-1]-x_data[0])/100)
     ax1.plot(x_data, exp_f(x_data, *popt), '--', color=color_fit,
              label='fit' # : a=%g, b=%g, c=%g' % tuple(popt)
             )
@@ -96,7 +104,7 @@ if __name__ == '__main__':
 
 
     # ax1.set_title(u'$g=1.4, h=0.0$')
-    y_max = 80000
+    y_max = 50000
     dy = y_max / 5
     ax1.set_ylim([0, y_max])
     ax1.text(0.4, y_max-dy, r'$h=0$', fontsize=12)
@@ -147,10 +155,11 @@ if __name__ == '__main__':
 
 
     x_data, y_data = zip(*mps_list)
-    x_data = np.array(x_data)
-    y_data = np.array(y_data)
+    x_data = np.array(x_data)[[0,2,6,14,30]]
+    y_data = np.array(y_data)[[0,2,6,14,30]]
 
     popt, pcov = curve_fit(exp_f, x_data, y_data)
+    x_data = np.arange(x_data[0], x_data[-1]+0.01, (x_data[-1]-x_data[0])/100)
     ax2.plot(x_data, exp_f(x_data, *popt), '--', color=color_fit,
              label='fit'  #: a=%g, b=%g, c=%g' % tuple(popt)
             )
@@ -211,10 +220,11 @@ if __name__ == '__main__':
 
 
     x_data, y_data = zip(*mps_list)
-    x_data = np.array(x_data)
-    y_data = np.array(y_data)
+    x_data = np.array(x_data)[[0,2,6,14,30]]
+    y_data = np.array(y_data)[[0,2,6,14,30]]
 
     popt, pcov = curve_fit(exp_f, x_data, y_data)
+    x_data = np.arange(x_data[0], x_data[-1]+0.01, (x_data[-1]-x_data[0])/100)
     ax3.plot(x_data, exp_f(x_data, *popt), '--', color=color_fit,
              label='fit'  # : a=%g, b=%g, c=%g' % tuple(popt)
             )
@@ -272,6 +282,7 @@ if __name__ == '__main__':
     y_data = np.array(y_data)
 
     popt, pcov = curve_fit(linear_f, x_data, y_data)
+    x_data = np.arange(x_data[0], x_data[-1]+0.01, (x_data[-1]-x_data[0])/100)
     ax1.plot(x_data, linear_f(x_data, *popt), '--', color=color_fit2,
              label='fit' # : a=%g, b=%g' % tuple(popt)
             )
@@ -306,6 +317,7 @@ if __name__ == '__main__':
     y_data = np.array(y_data)
 
     popt, pcov = curve_fit(linear_f, x_data, y_data)
+    x_data = np.arange(x_data[0], x_data[-1]+0.01, (x_data[-1]-x_data[0])/100)
     ax2.plot(x_data, linear_f(x_data, *popt), '--', color=color_fit2,
              label='fit'  #: a=%g, b=%g' % tuple(popt)
             )
@@ -341,6 +353,7 @@ if __name__ == '__main__':
     y_data = np.array(y_data)
 
     popt, pcov = curve_fit(linear_f, x_data, y_data)
+    x_data = np.arange(x_data[0], x_data[-1]+0.01, (x_data[-1]-x_data[0])/100)
     ax3.plot(x_data, linear_f(x_data, *popt), '--', color=color_fit2,
              label='fit'  # : a=%g, b=%g' % tuple(popt)
             )
