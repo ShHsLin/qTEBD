@@ -9,6 +9,8 @@ import seaborn as sns
 
 # sns.set_style("whitegrid", {'axes.grid' : False})
 current_palette = sns.color_palette()
+c_color = [sns.color_palette("Blues")[5], sns.color_palette("Blues")[2]]
+mps_color = [sns.color_palette("coolwarm", 7)[6], sns.color_palette("coolwarm", 7)[5]]
 
 
 def linear_f(x, a, b):
@@ -41,9 +43,9 @@ if __name__ == '__main__':
     # a=452.011, b=1.75265, c=-952.504
     # a=477.518, b=1.73049, c=-1064.32
     # a=877.347, b=1.38, c=-1902.49
-    mps_para = [(335.921, 1.85596, -649.48),
-                (330.995, 1.8545, -628.83),
-                (344.538, 1.66872, -423.661)]
+    mps_para = [(338.673, 1.73808, -579.029),
+                (334.279, 1.73642, -563.398),
+                (349.104, 1.56043, -404.505)]
 
 
     c_para = [(987.876, 10.9262),
@@ -104,30 +106,30 @@ if __name__ == '__main__':
 
     mps_list.append( (2.83, chi_2_Npara(32)) )
 
-    ax1.plot(*zip(*c_list), 'o', color=current_palette[0], label='circuit')
     x_data, y_data = zip(*c_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax1.plot(x_data, linear_f(x_data, *c_para[0]), '--', color=current_palette[0]
+    ax1.plot(x_data, linear_f(x_data, *c_para[0]), '--', color=c_color[1]
             )
 
 
 
-    ax1.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax1.plot(x_data, exp_f(x_data, *mps_para[0]), '--', color=current_palette[1]
+    ax1.plot(x_data, exp_f(x_data, *mps_para[0]), '--', color=mps_color[1]
             )
 
 
+    ax1.plot(*zip(*mps_list), 'o', color=mps_color[0], label='mps')
+    ax1.plot(*zip(*c_list), 'o', color=c_color[0], label='circuit')
 
 
     # ax1.set_title(u'$g=1.4, h=0.0$')
     y_max = 8000
     dy = y_max / 5
     ax1.set_ylim([0, y_max])
-    ax1.text(0.4, y_max-dy, r'$h=0$', fontsize=12)
+    ax1.text(0.25, y_max-dy, r'$h=0$', fontsize=11)
     # ax1.legend(loc='lower right')
     # ax1.set_ylabel(u'num para')
 
@@ -180,28 +182,28 @@ if __name__ == '__main__':
 
     mps_list.append( (2.84, chi_2_Npara(32)) )
 
-    ax2.plot(*zip(*c_list), 'o', color=current_palette[0], label='circuit')
     x_data, y_data = zip(*c_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax2.plot(x_data, linear_f(x_data, *c_para[1]), '--', color=current_palette[0]
+    ax2.plot(x_data, linear_f(x_data, *c_para[1]), '--', color=c_color[1]
             )
 
 
 
-    ax2.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax2.plot(x_data, exp_f(x_data, *mps_para[1]), '--', color=current_palette[1]
+    ax2.plot(x_data, exp_f(x_data, *mps_para[1]), '--', color=mps_color[1]
             )
 
 
+    ax2.plot(*zip(*mps_list), 'o', color=mps_color[0], label='mps')
+    ax2.plot(*zip(*c_list), 'o', color=c_color[0], label='circuit')
 
 
     # plt.title(u'$g=1.4, h=0.1$')
     ax2.set_ylim([0, y_max])
-    ax2.text(0.4, y_max-dy, r'$h=0.1$', fontsize=12)
+    ax2.text(0.25, y_max-dy, r'$h=0.1$', fontsize=11)
     # ax2.legend(loc='lower right')
     ax2.set_ylabel(u'Number of parameters')
     nbins = len(ax2.get_yticklabels()) # added
@@ -256,27 +258,26 @@ if __name__ == '__main__':
 
     mps_list.append( (3.13, chi_2_Npara(32)) )
 
-    ax3.plot(*zip(*c_list), 'o', color=current_palette[0], label='circuit')
     x_data, y_data = zip(*c_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax3.plot(x_data, linear_f(x_data, *c_para[2]), '--', color=current_palette[0]
+    ax3.plot(x_data, linear_f(x_data, *c_para[2]), '--', color=c_color[1]
             )
 
 
-
-    ax3.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax3.plot(x_data, exp_f(x_data, *mps_para[2]), '--', color=current_palette[1]
+    ax3.plot(x_data, exp_f(x_data, *mps_para[2]), '--', color=mps_color[1]
             )
 
 
+    ax3.plot(*zip(*mps_list), 'o', color=mps_color[0], label='mps')
+    ax3.plot(*zip(*c_list), 'o', color=c_color[0], label='circuit')
 
     # plt.title(u'$g=1.4, h=0.9045$')
     ax3.set_ylim([0, y_max])
-    ax3.text(0.4, y_max-dy, r'$h=0.9045$', fontsize=12)
+    ax3.text(0.25, y_max-dy, r'$h=0.9045$', fontsize=11)
     # ax3.legend(loc='lower right')
     ax3.legend(loc='center right')
     # ax3.set_ylabel(u'num para')

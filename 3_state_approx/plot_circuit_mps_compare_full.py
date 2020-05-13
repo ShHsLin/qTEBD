@@ -27,7 +27,7 @@ if __name__ == '__main__':
     order = '1st'
 
     num_frame = 2
-    fig, axes_list = plt.subplots(2, 4, figsize=(7.0, 2.9), sharey='row', sharex=True)
+    fig, axes_list = plt.subplots(2, 4, figsize=(7.0, 2.8), sharey='row', sharex=True)
     plt.subplots_adjust(hspace=0.1)
     plt.subplots_adjust(wspace=0.02)
 
@@ -80,14 +80,14 @@ if __name__ == '__main__':
             markersize = 4.
             linewidth = 1
             # ax1 = plt.subplot(2,1,1)
-            ax1.semilogy(t_list, fidelity_error_list, 'o--', color=color, label='depth=%d' % depth,
+            ax1.semilogy(t_list, fidelity_error_list, 'o--', color=color, label='$M=%d$' % depth,
                          linewidth=linewidth, markersize=markersize)
 
             # ax2 = plt.subplot(2,1,2, sharex=ax1)
             # plt.semilogy(t_list, diff_sz_list, 'o--', color=color, label='depth=%d' % depth)
             # plt.semilogy(t_list, num_iter_list, 'o--', color=color, label='depth=%d' % depth)
             # ax1 = plt.subplot(2,1,1)
-            ax2.plot(t_list, ent_list, 'o--', color=color, label='depth=%d' % depth,
+            ax2.plot(t_list, ent_list, 'o--', color=color, label='$M=%d$' % depth,
                      linewidth=linewidth, markersize=markersize)
 
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
         # ax3.xaxis.set_major_formatter(ticks_x)
 
         # ax2.set_xlabel(u'T')
-        ax1.set_title(u"$h = %g$" % (h), fontsize=12)
+        ax1.set_title(u"$h = %g$" % (h), fontsize=10)
         ax2.xaxis.set_ticks([0., 1., 2., 3., 4.])
         # plt.setp(ax1.get_xticklabels(), fontsize=10)
 
@@ -183,8 +183,8 @@ if __name__ == '__main__':
                       )
 
 
-    fig.text(0.5, 0.0, u'$Jt$', ha='center', fontsize=11)
+    fig.text(0.5, 0.0, u'$Jt$', ha='center', fontsize=10)
     # fig.suptitle(u'$g=1.4$')
-    plt.savefig('figure/full_circuit.pdf')
+    plt.savefig('figure/MPS-to-circuit.pdf')
     plt.show()
 

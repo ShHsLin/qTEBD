@@ -11,10 +11,13 @@ import seaborn as sns
 # sns.set_style("whitegrid", {'axes.grid' : False})
 current_palette = sns.color_palette()
 
-color_dot = 'gray'
-color_dot2 = 'gray'
-color_fit = current_palette[1]
-color_fit2 = current_palette[0]
+c_color = [sns.color_palette("Blues")[5], sns.color_palette("Blues")[2]]
+mps_color = [sns.color_palette("coolwarm", 7)[6], sns.color_palette("coolwarm", 7)[5]]
+
+color_dot = sns.color_palette("coolwarm", 7)[4]
+color_dot2 = sns.color_palette("Blues")[2]
+color_fit = sns.color_palette("coolwarm", 7)[6]
+color_fit2 = sns.color_palette("Blues")[5]
 markersize = 4.
 
 
@@ -107,7 +110,7 @@ if __name__ == '__main__':
     y_max = 50000
     dy = y_max / 5
     ax1.set_ylim([0, y_max])
-    ax1.text(0.4, y_max-dy, r'$h=0$', fontsize=12)
+    ax1.text(0.25, y_max-dy, r'$h=0$', fontsize=11)
     # ax1.legend(loc='lower right')
     # ax1.set_ylabel(u'num para')
 
@@ -169,7 +172,7 @@ if __name__ == '__main__':
 
     # plt.title(u'$g=1.4, h=0.1$')
     ax2.set_ylim([0, y_max])
-    ax2.text(0.4, y_max-dy, r'$h=0.1$', fontsize=12)
+    ax2.text(0.25, y_max-dy, r'$h=0.1$', fontsize=11)
     # ax2.legend(loc='lower right')
     ax2.set_ylabel(u'Number of parameters')
     nbins = len(ax2.get_yticklabels()) # added
@@ -234,7 +237,7 @@ if __name__ == '__main__':
 
     # plt.title(u'$g=1.4, h=0.9045$')
     ax3.set_ylim([0, y_max])
-    ax3.text(0.4, y_max-dy, r'$h=0.9045$', fontsize=12)
+    ax3.text(0.25, y_max-dy, r'$h=0.9045$', fontsize=11)
     # ax3.legend(loc='lower right')
     # ax1.legend(loc='center right')
     # ax2.legend(loc='center right')
@@ -294,7 +297,7 @@ if __name__ == '__main__':
     y_max = 3200
     dy = y_max / 5
     ax1.set_ylim([0, y_max])
-    ax1.text(0.4, y_max-dy, r'$h=0$', fontsize=12)
+    ax1.text(0.25, y_max-dy, r'$h=0$', fontsize=11)
     # ax1.legend(loc='lower right')
     # ax1.set_ylabel(u'num para')
 
@@ -327,7 +330,7 @@ if __name__ == '__main__':
 
     # plt.title(u'$g=1.4, h=0.1$')
     ax2.set_ylim([0, y_max])
-    ax2.text(0.4, y_max-dy, r'$h=0.1$', fontsize=12)
+    ax2.text(0.25, y_max-dy, r'$h=0.1$', fontsize=11)
     # ax2.legend(loc='lower right')
     ax2.set_ylabel(u'Number of parameters')
     nbins = len(ax2.get_yticklabels()) # added
@@ -363,7 +366,7 @@ if __name__ == '__main__':
 
     # plt.title(u'$g=1.4, h=0.9045$')
     ax3.set_ylim([0, y_max])
-    ax3.text(0.4, y_max-dy, r'$h=0.9045$', fontsize=12)
+    ax3.text(0.25, y_max-dy, r'$h=0.9045$', fontsize=11)
     # ax3.legend(loc='lower right')
     # ax1.legend(loc='center right')
     # ax2.legend(loc='center right')
