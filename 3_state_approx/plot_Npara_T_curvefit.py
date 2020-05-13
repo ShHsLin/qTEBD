@@ -1,14 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
 import sys
 sys.path.append('../')
 import setup
 from matplotlib.ticker import MaxNLocator # added
 import seaborn as sns
 # sns.set()
-
 # sns.set_style("whitegrid", {'axes.grid' : False})
-current_palette = sns.color_palette()
 
 
 def exp_f(x, a, b, c):
@@ -30,17 +30,9 @@ if __name__ == '__main__':
     plt.subplots_adjust(hspace=0.001)
 
 
-    c_list = []
     mps_list = []
     ##### g=1.4, h=0.0 #####
     ##### 1 - F = 1e-4 #####
-    c_list.append( (0.3125, chi_2_Npara(2)) )
-    c_list.append( (0.84, depth_2_Npara(2)) )
-    c_list.append( (1.41, depth_2_Npara(3)) )
-    c_list.append( (2.04, depth_2_Npara(4)) )
-    c_list.append( (2.51, depth_2_Npara(5)) )
-    c_list.append( (2.79, depth_2_Npara(6)) )
-
     mps_list.append( (0.3125, chi_2_Npara(2)) )
     mps_list.append( (0.396, chi_2_Npara(3)) )
     mps_list.append( (0.86, chi_2_Npara(4)) )
@@ -79,37 +71,31 @@ if __name__ == '__main__':
 
     mps_list.append( (2.83, chi_2_Npara(32)) )
 
-    ax1.plot(*zip(*c_list), 'o--', color=current_palette[0], label='circuit')
-    ax1.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
-    # a=452.011, b=1.75265, c=-952.504
+    ax1.plot(*zip(*mps_list), 'o', label='mps')
+
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax1.plot(x_data, exp_f(x_data, 452.011, 1.75265, -952.504), '--', color=current_palette[1]
+
+    popt, pcov = curve_fit(exp_f, x_data, y_data)
+    ax1.plot(x_data, exp_f(x_data, *popt), 'r--',
+             label='fit' # : a=%g, b=%g, c=%g' % tuple(popt)
             )
 
-
+    print('a=%g, b=%g, c=%g' % tuple(popt))
 
 
     # ax1.set_title(u'$g=1.4, h=0.0$')
-    y_max = 8000
+    y_max = 80000
     dy = y_max / 5
     ax1.set_ylim([0, y_max])
     ax1.text(0.4, y_max-dy, r'$h=0$', fontsize=12)
     # ax1.legend(loc='lower right')
     # ax1.set_ylabel(u'num para')
 
-    c_list = []
     mps_list = []
     ##### g=1.4, h=0.1 #####
     ##### 1 - F = 1e-4 #####
-    c_list.append( (0.3125, chi_2_Npara(2)) )
-    c_list.append( (0.8295, depth_2_Npara(2)) )
-    c_list.append( (1.25, depth_2_Npara(3)) )
-    c_list.append( (1.61, depth_2_Npara(4)) )
-    c_list.append( (1.95, depth_2_Npara(5)) )
-    c_list.append( (2.25, depth_2_Npara(6)) )
-
     mps_list.append( (0.3125, chi_2_Npara(2)) )
     mps_list.append( (0.396, chi_2_Npara(3)) )
     mps_list.append( (0.87, chi_2_Npara(4)) )
@@ -145,19 +131,21 @@ if __name__ == '__main__':
     mps_list.append( (2.80, chi_2_Npara(31)) )
 
 
-
     mps_list.append( (2.84, chi_2_Npara(32)) )
 
-    ax2.plot(*zip(*c_list), 'o--', color=current_palette[0], label='circuit')
-    ax2.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
-    # a=477.518, b=1.73049, c=-1064.32
+    ax2.plot(*zip(*mps_list), 'o', label='mps')
+
+
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax2.plot(x_data, exp_f(x_data, 477.518, 1.73049, -1064.32), '--', color=current_palette[1]
+
+    popt, pcov = curve_fit(exp_f, x_data, y_data)
+    ax2.plot(x_data, exp_f(x_data, *popt), 'r--',
+             label='fit'  #: a=%g, b=%g, c=%g' % tuple(popt)
             )
 
-
+    print('a=%g, b=%g, c=%g' % tuple(popt))
 
 
     # plt.title(u'$g=1.4, h=0.1$')
@@ -169,17 +157,9 @@ if __name__ == '__main__':
     ax2.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
 
-    c_list = []
     mps_list = []
     ##### g=1.4, h=0.9045 #####
     ##### 1 - F = 1e-4 #####
-    c_list.append( (0.3125, chi_2_Npara(2)) )
-    c_list.append( (0.66, depth_2_Npara(2)) )
-    c_list.append( (0.99, depth_2_Npara(3)) )
-    c_list.append( (1.30, depth_2_Npara(4)) )
-    c_list.append( (1.48, depth_2_Npara(5)) )
-    c_list.append( (1.75, depth_2_Npara(6)) )
-
     mps_list.append( (0.3125, chi_2_Npara(2)) )
     mps_list.append( (0.396, chi_2_Npara(3)) )
     mps_list.append( (0.88, chi_2_Npara(4)) )
@@ -217,32 +197,38 @@ if __name__ == '__main__':
 
     mps_list.append( (3.13, chi_2_Npara(32)) )
 
-    ax3.plot(*zip(*c_list), 'o--', color=current_palette[0], label='circuit')
-    ax3.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
-    # a=877.347, b=1.38, c=-1902.49
+    ax3.plot(*zip(*mps_list), 'o', label='mps')
+
+
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
-    ax3.plot(x_data, exp_f(x_data, 877.347, 1.38, -1902.49), '--', color=current_palette[1]
+
+    popt, pcov = curve_fit(exp_f, x_data, y_data)
+    ax3.plot(x_data, exp_f(x_data, *popt), 'r--',
+             label='fit'  # : a=%g, b=%g, c=%g' % tuple(popt)
             )
 
+    print('a=%g, b=%g, c=%g' % tuple(popt))
 
 
     # plt.title(u'$g=1.4, h=0.9045$')
     ax3.set_ylim([0, y_max])
     ax3.text(0.4, y_max-dy, r'$h=0.9045$', fontsize=12)
     # ax3.legend(loc='lower right')
-    ax3.legend(loc='center right')
+    # ax1.legend(loc='center right')
+    # ax2.legend(loc='center right')
+    ax3.legend(loc='center left')
     # ax3.set_ylabel(u'num para')
     ax3.set_xlabel(u'$Jt^*$')
     ax3.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
 
-    ax3.set_xlim([0., 3.0])
+    ax3.set_xlim([0., 3.2])
 
     plt.subplots_adjust(left=0.2)
-    plt.savefig('figure/mps_circuit_Npara.png')
-    plt.savefig('figure/mps_circuit_Npara.pdf')
+    plt.savefig('figure/mps_Npara_fit.png')
+    plt.savefig('figure/mps_Npara_fit.pdf')
     plt.show()
 
 
