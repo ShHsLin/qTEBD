@@ -11,6 +11,9 @@ import seaborn as sns
 current_palette = sns.color_palette()
 
 
+def linear_f(x, a, b):
+    return a * x + b
+
 def exp_f(x, a, b, c):
     return a * np.exp(b * x) + c
 
@@ -24,7 +27,13 @@ def chi_2_Npara(chi):
     Npara = 2 * L * chi**2
     return Npara
 
+
 if __name__ == '__main__':
+
+    c_para = [(987.876, 10.9262),
+              (1335.34, -184.082),
+              (1795, -301.009)]
+
 
     fig, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, figsize=(3.5,5))
     plt.subplots_adjust(hspace=0.001)
@@ -79,7 +88,15 @@ if __name__ == '__main__':
 
     mps_list.append( (2.83, chi_2_Npara(32)) )
 
-    ax1.plot(*zip(*c_list), 'o--', color=current_palette[0], label='circuit')
+    ax1.plot(*zip(*c_list), 'o', color=current_palette[0], label='circuit')
+    x_data, y_data = zip(*c_list)
+    x_data = np.array(x_data)
+    y_data = np.array(y_data)
+    ax1.plot(x_data, linear_f(x_data, *c_para[0]), '--', color=current_palette[0]
+            )
+
+
+
     ax1.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
     # a=452.011, b=1.75265, c=-952.504
     x_data, y_data = zip(*mps_list)
@@ -148,7 +165,15 @@ if __name__ == '__main__':
 
     mps_list.append( (2.84, chi_2_Npara(32)) )
 
-    ax2.plot(*zip(*c_list), 'o--', color=current_palette[0], label='circuit')
+    ax2.plot(*zip(*c_list), 'o', color=current_palette[0], label='circuit')
+    x_data, y_data = zip(*c_list)
+    x_data = np.array(x_data)
+    y_data = np.array(y_data)
+    ax2.plot(x_data, linear_f(x_data, *c_para[1]), '--', color=current_palette[0]
+            )
+
+
+
     ax2.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
     # a=477.518, b=1.73049, c=-1064.32
     x_data, y_data = zip(*mps_list)
@@ -217,7 +242,15 @@ if __name__ == '__main__':
 
     mps_list.append( (3.13, chi_2_Npara(32)) )
 
-    ax3.plot(*zip(*c_list), 'o--', color=current_palette[0], label='circuit')
+    ax3.plot(*zip(*c_list), 'o', color=current_palette[0], label='circuit')
+    x_data, y_data = zip(*c_list)
+    x_data = np.array(x_data)
+    y_data = np.array(y_data)
+    ax3.plot(x_data, linear_f(x_data, *c_para[2]), '--', color=current_palette[0]
+            )
+
+
+
     ax3.plot(*zip(*mps_list), 'o', color=current_palette[1], label='mps')
     # a=877.347, b=1.38, c=-1902.49
     x_data, y_data = zip(*mps_list)

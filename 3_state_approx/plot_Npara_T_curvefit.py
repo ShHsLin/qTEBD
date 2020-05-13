@@ -11,10 +11,15 @@ import seaborn as sns
 # sns.set_style("whitegrid", {'axes.grid' : False})
 current_palette = sns.color_palette()
 
-color_dot = current_palette[1]
-color_fit = current_palette[0]
+color_dot = 'gray'
+color_dot2 = 'gray'
+color_fit = current_palette[1]
+color_fit2 = current_palette[0]
 markersize = 4.
 
+
+def linear_f(x, a, b):
+    return a * x + b
 
 def exp_f(x, a, b, c):
     return a * np.exp(b * x) + c
@@ -234,6 +239,132 @@ if __name__ == '__main__':
     plt.subplots_adjust(left=0.2)
     plt.savefig('figure/mps_Npara_fit.png')
     plt.savefig('figure/mps_Npara_fit.pdf')
+    plt.show()
+
+    plt.close(fig)
+
+
+    ######################################################################
+    ######################################################################
+    ######################################################################
+    ######################################################################
+
+
+    fig, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, figsize=(3.5,5))
+    plt.subplots_adjust(hspace=0.001)
+
+
+
+    c_list = []
+    ##### g=1.4, h=0.0 #####
+    ##### 1 - F = 1e-4 #####
+    c_list.append( (0.3125, chi_2_Npara(2)) )
+    c_list.append( (0.84, depth_2_Npara(2)) )
+    c_list.append( (1.41, depth_2_Npara(3)) )
+    c_list.append( (2.04, depth_2_Npara(4)) )
+    c_list.append( (2.51, depth_2_Npara(5)) )
+    c_list.append( (2.79, depth_2_Npara(6)) )
+
+    ax1.plot(*zip(*c_list), 'o', markersize=markersize, color=color_dot2, label='circuit')
+
+    x_data, y_data = zip(*c_list)
+    x_data = np.array(x_data)
+    y_data = np.array(y_data)
+
+    popt, pcov = curve_fit(linear_f, x_data, y_data)
+    ax1.plot(x_data, linear_f(x_data, *popt), '--', color=color_fit2,
+             label='fit' # : a=%g, b=%g' % tuple(popt)
+            )
+
+    print('a=%g, b=%g' % tuple(popt))
+
+
+    # ax1.set_title(u'$g=1.4, h=0.0$')
+    y_max = 3200
+    dy = y_max / 5
+    ax1.set_ylim([0, y_max])
+    ax1.text(0.4, y_max-dy, r'$h=0$', fontsize=12)
+    # ax1.legend(loc='lower right')
+    # ax1.set_ylabel(u'num para')
+
+
+    c_list = []
+    ##### g=1.4, h=0.1 #####
+    ##### 1 - F = 1e-4 #####
+    c_list.append( (0.3125, chi_2_Npara(2)) )
+    c_list.append( (0.8295, depth_2_Npara(2)) )
+    c_list.append( (1.25, depth_2_Npara(3)) )
+    c_list.append( (1.61, depth_2_Npara(4)) )
+    c_list.append( (1.95, depth_2_Npara(5)) )
+    c_list.append( (2.25, depth_2_Npara(6)) )
+
+    ax2.plot(*zip(*c_list), 'o', markersize=markersize, color=color_dot2, label='circuit')
+
+
+    x_data, y_data = zip(*c_list)
+    x_data = np.array(x_data)
+    y_data = np.array(y_data)
+
+    popt, pcov = curve_fit(linear_f, x_data, y_data)
+    ax2.plot(x_data, linear_f(x_data, *popt), '--', color=color_fit2,
+             label='fit'  #: a=%g, b=%g' % tuple(popt)
+            )
+
+    print('a=%g, b=%g' % tuple(popt))
+
+
+    # plt.title(u'$g=1.4, h=0.1$')
+    ax2.set_ylim([0, y_max])
+    ax2.text(0.4, y_max-dy, r'$h=0.1$', fontsize=12)
+    # ax2.legend(loc='lower right')
+    ax2.set_ylabel(u'Number of parameters')
+    nbins = len(ax2.get_yticklabels()) # added
+    ax2.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
+
+
+
+    c_list = []
+    ##### g=1.4, h=0.9045 #####
+    ##### 1 - F = 1e-4 #####
+    c_list.append( (0.3125, chi_2_Npara(2)) )
+    c_list.append( (0.66, depth_2_Npara(2)) )
+    c_list.append( (0.99, depth_2_Npara(3)) )
+    c_list.append( (1.30, depth_2_Npara(4)) )
+    c_list.append( (1.48, depth_2_Npara(5)) )
+    c_list.append( (1.75, depth_2_Npara(6)) )
+
+    ax3.plot(*zip(*c_list), 'o', markersize=markersize, color=color_dot2, label='circuit')
+
+
+    x_data, y_data = zip(*c_list)
+    x_data = np.array(x_data)
+    y_data = np.array(y_data)
+
+    popt, pcov = curve_fit(linear_f, x_data, y_data)
+    ax3.plot(x_data, linear_f(x_data, *popt), '--', color=color_fit2,
+             label='fit'  # : a=%g, b=%g' % tuple(popt)
+            )
+
+    print('a=%g, b=%g' % tuple(popt))
+
+
+    # plt.title(u'$g=1.4, h=0.9045$')
+    ax3.set_ylim([0, y_max])
+    ax3.text(0.4, y_max-dy, r'$h=0.9045$', fontsize=12)
+    # ax3.legend(loc='lower right')
+    # ax1.legend(loc='center right')
+    # ax2.legend(loc='center right')
+    ax3.legend(loc='center right')
+    # ax3.set_ylabel(u'num para')
+    ax3.set_xlabel(u'$Jt^*$')
+    ax3.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
+
+
+    ax3.set_xlim([0., 3.2])
+
+    plt.subplots_adjust(left=0.2)
+    plt.savefig('figure/circuit_Npara_fit.png')
+    plt.savefig('figure/circuit_Npara_fit.pdf')
     plt.show()
 
 
