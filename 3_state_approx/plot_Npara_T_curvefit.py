@@ -9,6 +9,11 @@ from matplotlib.ticker import MaxNLocator # added
 import seaborn as sns
 # sns.set()
 # sns.set_style("whitegrid", {'axes.grid' : False})
+current_palette = sns.color_palette()
+
+color_dot = current_palette[1]
+color_fit = current_palette[0]
+markersize = 4.
 
 
 def exp_f(x, a, b, c):
@@ -71,14 +76,14 @@ if __name__ == '__main__':
 
     mps_list.append( (2.83, chi_2_Npara(32)) )
 
-    ax1.plot(*zip(*mps_list), 'o', label='mps')
+    ax1.plot(*zip(*mps_list), 'o', markersize=markersize, color=color_dot, label='mps')
 
     x_data, y_data = zip(*mps_list)
     x_data = np.array(x_data)
     y_data = np.array(y_data)
 
     popt, pcov = curve_fit(exp_f, x_data, y_data)
-    ax1.plot(x_data, exp_f(x_data, *popt), 'r--',
+    ax1.plot(x_data, exp_f(x_data, *popt), '--', color=color_fit,
              label='fit' # : a=%g, b=%g, c=%g' % tuple(popt)
             )
 
@@ -133,7 +138,7 @@ if __name__ == '__main__':
 
     mps_list.append( (2.84, chi_2_Npara(32)) )
 
-    ax2.plot(*zip(*mps_list), 'o', label='mps')
+    ax2.plot(*zip(*mps_list), 'o', markersize=markersize, color=color_dot, label='mps')
 
 
     x_data, y_data = zip(*mps_list)
@@ -141,7 +146,7 @@ if __name__ == '__main__':
     y_data = np.array(y_data)
 
     popt, pcov = curve_fit(exp_f, x_data, y_data)
-    ax2.plot(x_data, exp_f(x_data, *popt), 'r--',
+    ax2.plot(x_data, exp_f(x_data, *popt), '--', color=color_fit,
              label='fit'  #: a=%g, b=%g, c=%g' % tuple(popt)
             )
 
@@ -197,7 +202,7 @@ if __name__ == '__main__':
 
     mps_list.append( (3.13, chi_2_Npara(32)) )
 
-    ax3.plot(*zip(*mps_list), 'o', label='mps')
+    ax3.plot(*zip(*mps_list), 'o', markersize=markersize, color=color_dot, label='mps')
 
 
     x_data, y_data = zip(*mps_list)
@@ -205,7 +210,7 @@ if __name__ == '__main__':
     y_data = np.array(y_data)
 
     popt, pcov = curve_fit(exp_f, x_data, y_data)
-    ax3.plot(x_data, exp_f(x_data, *popt), 'r--',
+    ax3.plot(x_data, exp_f(x_data, *popt), '--', color=color_fit,
              label='fit'  # : a=%g, b=%g, c=%g' % tuple(popt)
             )
 
