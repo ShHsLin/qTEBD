@@ -129,37 +129,70 @@ def check_circuit(dir_path, depth, N_iter, order):
     path = dir_path + filename
     return os.path.exists(path)
 
-def load_circuit(dir_path, depth, N_iter, order):
-    filename = 'circuit_depth%d_Niter%d_%s_circuit_tmp.pkl' % (depth, N_iter, order)
-    path = dir_path + filename
-    circuit = pickle.load(open(path, 'rb'))
+def load_circuit(dir_path, depth, N_iter, order, tmp=True):
+    if tmp:
+        filename = 'circuit_depth%d_Niter%d_%s_circuit_tmp.pkl' % (depth, N_iter, order)
+        path = dir_path + filename
+        circuit = pickle.load(open(path, 'rb'))
 
-    filename = 'circuit_depth%d_Niter%d_%s_energy_tmp.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    E_list = np.load(path).tolist()
+        filename = 'circuit_depth%d_Niter%d_%s_energy_tmp.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        E_list = np.load(path).tolist()
 
-    filename = 'circuit_depth%d_Niter%d_%s_dt_tmp.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    t_list = np.load(path).tolist()
+        filename = 'circuit_depth%d_Niter%d_%s_dt_tmp.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        t_list = np.load(path).tolist()
 
-    filename = 'circuit_depth%d_Niter%d_%s_error_tmp.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    update_error_list = np.load(path).tolist()
+        filename = 'circuit_depth%d_Niter%d_%s_error_tmp.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        update_error_list = np.load(path).tolist()
 
-    filename = 'circuit_depth%d_Niter%d_%s_sz_array_tmp.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    Sz_array = np.load(path)
+        filename = 'circuit_depth%d_Niter%d_%s_sz_array_tmp.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        Sz_array = np.load(path)
 
-    filename = 'circuit_depth%d_Niter%d_%s_ent_array_tmp.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    ent_array = np.load(path)
+        filename = 'circuit_depth%d_Niter%d_%s_ent_array_tmp.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        ent_array = np.load(path)
 
-    filename = 'circuit_depth%d_Niter%d_%s_Niter_array_tmp.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    num_iter_array = np.load(path)
+        filename = 'circuit_depth%d_Niter%d_%s_Niter_array_tmp.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        num_iter_array = np.load(path)
 
-    running_idx = len(t_list)
-    return (running_idx, circuit, E_list, t_list, update_error_list,
-            Sz_array, ent_array, num_iter_array)
+        running_idx = len(t_list)
+        return (running_idx, circuit, E_list, t_list, update_error_list,
+                Sz_array, ent_array, num_iter_array)
+    else:
+        filename = 'circuit_depth%d_Niter%d_%s_circuit.pkl' % (depth, N_iter, order)
+        path = dir_path + filename
+        circuit = pickle.load(open(path, 'rb'))
+
+        filename = 'circuit_depth%d_Niter%d_%s_energy.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        E_list = np.load(path).tolist()
+
+        filename = 'circuit_depth%d_Niter%d_%s_dt.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        t_list = np.load(path).tolist()
+
+        filename = 'circuit_depth%d_Niter%d_%s_error.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        update_error_list = np.load(path).tolist()
+
+        filename = 'circuit_depth%d_Niter%d_%s_sz_array.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        Sz_array = np.load(path)
+
+        filename = 'circuit_depth%d_Niter%d_%s_ent_array.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        ent_array = np.load(path)
+
+        filename = 'circuit_depth%d_Niter%d_%s_Niter_array.npy' % (depth, N_iter, order)
+        path = dir_path + filename
+        num_iter_array = np.load(path)
+
+        running_idx = len(t_list)
+        return (running_idx, circuit, E_list, t_list, update_error_list,
+                Sz_array, ent_array, num_iter_array)
 
 

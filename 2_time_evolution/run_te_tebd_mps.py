@@ -44,7 +44,7 @@ if __name__ == "__main__":
     J = 1.
     dt = 0.01
     save_each = int(0.5 / dt)
-    total_t = 100
+    total_t = 5
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
     H_list =  qTEBD.get_H(Hamiltonian, L, J, g, h)
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]

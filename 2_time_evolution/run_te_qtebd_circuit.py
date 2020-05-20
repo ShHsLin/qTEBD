@@ -29,7 +29,7 @@ if __name__ == "__main__":
     depth = int(sys.argv[4])
     N_iter = int(sys.argv[5])
     order = str(sys.argv[6])
-    total_t = 30.
+    total_t = 5.
     dt = 0.01
     save_each = int(0.1 // dt)
     tol = 1e-12
@@ -69,6 +69,15 @@ if __name__ == "__main__":
     ent_array[0, :] = qTEBD.get_entanglement(mps_of_last_layer)
 
     dir_path = 'data_te/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
+
+    ### Find if the result is already obtained ####
+    if misc.check_circuit(dir_path, depth, N_iter, order):
+        print("Found finished circuit; quit")
+        exit()
+    else:
+        pass
+
+
     wf_dir_path = dir_path + 'wf_depth%d_Niter%d_%s/' % (depth, N_iter, order)
     if not os.path.exists(wf_dir_path):
         os.makedirs(wf_dir_path)
@@ -76,6 +85,7 @@ if __name__ == "__main__":
     if idx % save_each == 0:
         pickle.dump(my_circuit, open(wf_dir_path + 'T%.1f.pkl' % t_list[-1], 'wb'))
 
+    #### Trying to load the previous unended result ####
     running_idx = len(t_list)
     try:
         tuple_loaded = misc.load_circuit(dir_path, depth, N_iter, order)
