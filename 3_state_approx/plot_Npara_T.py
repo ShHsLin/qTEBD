@@ -13,6 +13,8 @@ c_color = [sns.color_palette("Blues")[5], sns.color_palette("Blues")[2]]
 mps_color = [sns.color_palette("coolwarm", 7)[6], sns.color_palette("coolwarm", 7)[5]]
 
 
+markersize = 4.
+
 def linear_f(x, a, b):
     return a * x + b
 
@@ -53,8 +55,8 @@ if __name__ == '__main__':
               (1795, -301.009)]
 
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, figsize=(3.5,5))
-    plt.subplots_adjust(hspace=0.001)
+    fig, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, figsize=(3.5,4.5))
+    plt.subplots_adjust(hspace=0.07)
 
 
     c_list = []
@@ -121,15 +123,15 @@ if __name__ == '__main__':
             )
 
 
-    ax1.plot(*zip(*mps_list), 'o', color=mps_color[0], label='mps')
-    ax1.plot(*zip(*c_list), 'o', color=c_color[0], label='circuit')
+    ax1.plot(*zip(*mps_list), 'o', color=mps_color[0], markersize=markersize, label='mps')
+    ax1.plot(*zip(*c_list), 'o', color=c_color[0], markersize=markersize, label='circuit')
 
 
     # ax1.set_title(u'$g=1.4, h=0.0$')
     y_max = 8000
-    dy = y_max / 5
+    dy = y_max / 5.5
     ax1.set_ylim([0, y_max])
-    ax1.text(0.25, y_max-dy, r'$h=0$', fontsize=11)
+    ax1.text(0.2, y_max-dy, r'$h=0$', fontsize=10.)
     # ax1.legend(loc='lower right')
     # ax1.set_ylabel(u'num para')
 
@@ -197,16 +199,18 @@ if __name__ == '__main__':
             )
 
 
-    ax2.plot(*zip(*mps_list), 'o', color=mps_color[0], label='mps')
-    ax2.plot(*zip(*c_list), 'o', color=c_color[0], label='circuit')
+    ax2.plot(*zip(*mps_list), 'o', color=mps_color[0], markersize=markersize, label='mps')
+    ax2.plot(*zip(*c_list), 'o', color=c_color[0], markersize=markersize, label='circuit')
 
 
     # plt.title(u'$g=1.4, h=0.1$')
     ax2.set_ylim([0, y_max])
-    ax2.text(0.25, y_max-dy, r'$h=0.1$', fontsize=11)
+    ax2.text(0.2, y_max-dy, r'$h=0.1$', fontsize=10.)
     # ax2.legend(loc='lower right')
     ax2.set_ylabel(u'Number of parameters')
-    nbins = len(ax2.get_yticklabels()) # added
+
+    ### This will prune the upper ticks
+    nbins = len(ax2.get_yticklabels()) + 1 # added
     ax2.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
 
@@ -271,24 +275,24 @@ if __name__ == '__main__':
     ax3.plot(x_data, exp_f(x_data, *mps_para[2]), '--', color=mps_color[1]
             )
 
-
-    ax3.plot(*zip(*mps_list), 'o', color=mps_color[0], label='mps')
-    ax3.plot(*zip(*c_list), 'o', color=c_color[0], label='circuit')
+    ax3.plot(*zip(*mps_list), 'o', color=mps_color[0], markersize=markersize, label='mps')
+    ax3.plot(*zip(*c_list), 'o', color=c_color[0], markersize=markersize, label='circuit')
 
     # plt.title(u'$g=1.4, h=0.9045$')
     ax3.set_ylim([0, y_max])
-    ax3.text(0.25, y_max-dy, r'$h=0.9045$', fontsize=11)
+    ax3.text(0.2, y_max-dy, r'$h=0.9045$', fontsize=10.)
     # ax3.legend(loc='lower right')
-    ax3.legend(loc='center right')
+    ax3.legend(loc='center right', fontsize=10.)
     # ax3.set_ylabel(u'num para')
     ax3.set_xlabel(u'$Jt^*$')
+
+    #### This will prune upper ticks
     ax3.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
 
     ax3.set_xlim([0., 3.0])
 
-    plt.subplots_adjust(left=0.2)
-    plt.savefig('figure/mps_circuit_Npara.png')
+    plt.subplots_adjust(left=0.17, bottom=0.1, top=0.96, right=0.95)
     plt.savefig('figure/mps_circuit_Npara.pdf')
     plt.show()
 

@@ -48,8 +48,8 @@ def chi_2_Npara(chi, L=31):
 
 if __name__ == '__main__':
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, figsize=(3.5,5))
-    plt.subplots_adjust(hspace=0.001)
+    fig, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, figsize=(3.5,4.6))
+    plt.subplots_adjust(hspace=0.07)
 
 
     mps_list = []
@@ -110,9 +110,12 @@ if __name__ == '__main__':
     y_max = 50000
     dy = y_max / 5
     ax1.set_ylim([0, y_max])
-    ax1.text(0.25, y_max-dy, r'$h=0$', fontsize=11)
+    ax1.text(0.25, y_max-dy, r'$h=0$', fontsize=10.)
     # ax1.legend(loc='lower right')
     # ax1.set_ylabel(u'num para')
+
+    # nbins=4
+    # ax1.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
     mps_list = []
     ##### g=1.4, h=0.1 #####
@@ -172,11 +175,13 @@ if __name__ == '__main__':
 
     # plt.title(u'$g=1.4, h=0.1$')
     ax2.set_ylim([0, y_max])
-    ax2.text(0.25, y_max-dy, r'$h=0.1$', fontsize=11)
+    ax2.text(0.25, y_max-dy, r'$h=0.1$', fontsize=10.)
     # ax2.legend(loc='lower right')
     ax2.set_ylabel(u'Number of parameters')
-    nbins = len(ax2.get_yticklabels()) # added
-    ax2.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
+
+    # nbins = len(ax2.get_yticklabels()) # added
+    # nbins=4
+    # ax2.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
 
     mps_list = []
@@ -237,20 +242,21 @@ if __name__ == '__main__':
 
     # plt.title(u'$g=1.4, h=0.9045$')
     ax3.set_ylim([0, y_max])
-    ax3.text(0.25, y_max-dy, r'$h=0.9045$', fontsize=11)
+    ax3.text(0.25, y_max-dy, r'$h=0.9045$', fontsize=10.)
     # ax3.legend(loc='lower right')
     # ax1.legend(loc='center right')
     # ax2.legend(loc='center right')
-    ax3.legend(loc='center left')
+    ax3.legend(loc='center left', fontsize=10.)
     # ax3.set_ylabel(u'num para')
     ax3.set_xlabel(u'$Jt^*$')
-    ax3.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
+
+    # nbins=4
+    # ax3.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
 
     ax3.set_xlim([0., 3.2])
 
-    plt.subplots_adjust(left=0.2)
-    plt.savefig('figure/mps_Npara_fit.png')
+    plt.subplots_adjust(left=0.20, top=0.95, right=0.95)
     plt.savefig('figure/mps_Npara_fit.pdf')
     plt.show()
 
@@ -263,8 +269,8 @@ if __name__ == '__main__':
     ######################################################################
 
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, figsize=(3.5,5))
-    plt.subplots_adjust(hspace=0.001)
+    fig, (ax1, ax2, ax3) = plt.subplots(3,1, sharex=True, figsize=(3.5,4.6))
+    plt.subplots_adjust(hspace=0.07)
 
 
 
@@ -297,9 +303,12 @@ if __name__ == '__main__':
     y_max = 3200
     dy = y_max / 5
     ax1.set_ylim([0, y_max])
-    ax1.text(0.25, y_max-dy, r'$h=0$', fontsize=11)
+    ax1.text(0.25, y_max-dy, r'$h=0$', fontsize=10.)
     # ax1.legend(loc='lower right')
     # ax1.set_ylabel(u'num para')
+
+    # nbins=4
+    # ax1.yaxis.set_major_locator(MaxNLocator(nbins=nbins)) # added
 
 
     c_list = []
@@ -330,11 +339,13 @@ if __name__ == '__main__':
 
     # plt.title(u'$g=1.4, h=0.1$')
     ax2.set_ylim([0, y_max])
-    ax2.text(0.25, y_max-dy, r'$h=0.1$', fontsize=11)
+    ax2.text(0.25, y_max-dy, r'$h=0.1$', fontsize=10.)
     # ax2.legend(loc='lower right')
     ax2.set_ylabel(u'Number of parameters')
-    nbins = len(ax2.get_yticklabels()) # added
-    ax2.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
+
+
+    # nbins = len(ax2.get_yticklabels()) # added
+    # ax2.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
 
 
@@ -366,20 +377,20 @@ if __name__ == '__main__':
 
     # plt.title(u'$g=1.4, h=0.9045$')
     ax3.set_ylim([0, y_max])
-    ax3.text(0.25, y_max-dy, r'$h=0.9045$', fontsize=11)
+    ax3.text(0.25, y_max-dy, r'$h=0.9045$', fontsize=10.)
     # ax3.legend(loc='lower right')
     # ax1.legend(loc='center right')
     # ax2.legend(loc='center right')
-    ax3.legend(loc='center right')
+    ax3.legend(loc='center right', fontsize=10.)
     # ax3.set_ylabel(u'num para')
     ax3.set_xlabel(u'$Jt^*$')
-    ax3.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
+
+    # ax3.yaxis.set_major_locator(MaxNLocator(nbins=nbins, prune='upper')) # added
 
 
     ax3.set_xlim([0., 3.2])
 
-    plt.subplots_adjust(left=0.2)
-    plt.savefig('figure/circuit_Npara_fit.png')
+    plt.subplots_adjust(left=0.20, top=0.95, right=0.95)
     plt.savefig('figure/circuit_Npara_fit.pdf')
     plt.show()
 

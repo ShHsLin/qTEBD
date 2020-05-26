@@ -14,6 +14,9 @@ color_set = [sns.color_palette("GnBu_d"),
              sns.light_palette("green"),
             ]
 
+markersize = 4.
+linewidth = 1
+
 
 if __name__ == '__main__':
     L = 31
@@ -28,8 +31,8 @@ if __name__ == '__main__':
 
     num_frame = 2
     fig, axes_list = plt.subplots(2, 4, figsize=(7.0, 2.8), sharey='row', sharex=True)
-    plt.subplots_adjust(hspace=0.1)
-    plt.subplots_adjust(wspace=0.02)
+    plt.subplots_adjust(hspace=0.08)
+    plt.subplots_adjust(wspace=0.06)
 
     for h_idx, h in enumerate([0., 0.1, 0.5, 0.9045]):
         ax1 = axes_list[0][h_idx]
@@ -42,8 +45,8 @@ if __name__ == '__main__':
         exact_t = np.load('../2_time_evolution/data_tebd/1d_TFI_g%.4f_h%.4f/L31/mps_chi%d_1st_dt.npy' % (g, h, chi))
 
 
-        ax1.axhline(1e-4, color='grey',linestyle='--')
-        ax2.plot(exact_t[:400], exact_ent[:400,L//2], 'k-', label='exact')
+        ax1.axhline(1e-4, color='grey',linestyle='--', linewidth=0.5)
+        ax2.plot(exact_t[:400], exact_ent[:400,L//2], 'k-', linewidth=linewidth, label='exact')
 
         cutoff_time = 4.
         dt = 0.1
@@ -77,8 +80,6 @@ if __name__ == '__main__':
                     print(e)
 
 
-            markersize = 4.
-            linewidth = 1
             # ax1 = plt.subplot(2,1,1)
             ax1.semilogy(t_list, fidelity_error_list, 'o--', color=color, label='$M=%d$' % depth,
                          linewidth=linewidth, markersize=markersize)
@@ -147,7 +148,7 @@ if __name__ == '__main__':
 
             #plt.ylim()
             ax2.set_ylim([0., 1.6])
-            ax2.set_ylabel(u'entanglement')
+            ax2.set_ylabel(u'$ S_{vN}^{L/2} $')
             # ax2.set_xlabel(u'T')
 
                 # ax2.set_ylim([1e-8, 1e-0])
@@ -178,12 +179,13 @@ if __name__ == '__main__':
             #     # plt.savefig('figure/cf%d_mps_circuit_%s_g%.4f_h%.4f.pdf' % (num_frame, plot_topic, g, h))
             #     # plt.show()
         elif h_idx == 3:
-            ax2.legend(fontsize=8, loc='upper right', bbox_to_anchor=(1.3, 1.58),
+            ax2.legend(fontsize=8, loc='upper right', bbox_to_anchor=(1.0, 1.58),
                        framealpha=1.
                       )
 
 
     fig.text(0.5, 0.0, u'$Jt$', ha='center', fontsize=10)
+    plt.subplots_adjust(left=0.09, bottom=0.12, top=0.93, right=0.98)
     # fig.suptitle(u'$g=1.4$')
     plt.savefig('figure/MPS-to-circuit.pdf')
     plt.show()
