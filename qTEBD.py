@@ -115,6 +115,10 @@ def init_mps(L, chi, d):
     return A_list
 
 def polar(A):
+    '''
+    return:
+        polar decomposition of A
+    '''
     d,chi1,chi2 = A.shape
     Y,D,Z = misc.svd(A.reshape(d*chi1,chi2), full_matrices=False)
     return np.dot(Y,Z).reshape([d,chi1,chi2])
@@ -384,6 +388,7 @@ def var_gate_w_cache(new_mps, site, mps_ket, Lp_cache, Rp_cache):
     M = np.tensordot(M, theta_top, axes=([0, 3], [1, 3])) #lower_p, lower_q, upper_p, upper_q
     M = M.reshape([4, 4])
 
+    ### For detailed explanation of the formula, see function var_gate
     U, _, Vd = misc.svd(M, full_matrices=False)
     new_gate = np.dot(U, Vd).conj()
     new_gate = new_gate.reshape([2, 2, 2, 2])
@@ -392,9 +397,15 @@ def var_gate_w_cache(new_mps, site, mps_ket, Lp_cache, Rp_cache):
 
 def var_gate(new_mps, site, mps_ket):
     '''
-    max
-    <new_mps | gate | mps_ket>
-    where gate is actting on (site, site+1)
+    Input:
+        new_mps : the mps representation of the bra
+        site : two site gate is applied on (site, site+1)
+        mps_ket : the mps representation of the ket
+    Goal:
+        max  Re<new_mps | gate | mps_ket>
+        where gate is actting on (site, site+1)
+    return:
+        new_gate
     '''
     L = len(new_mps)
     Lp = np.ones([1, 1])
@@ -424,19 +435,23 @@ def var_gate(new_mps, site, mps_ket):
     M = np.tensordot(M, theta_top, axes=([0, 3], [1, 3])) #lower_p, lower_q, upper_p, upper_q
     M = M.reshape([4, 4])
 
+    ##### The formula should work for the first layer; where the unitary there has redundant
+    ##### degree of freedom.
     # M_copy = M.reshape([2, 2, 2, 2]).copy()
     # M_copy = M_copy[:, 0, :, :]
     # U, _, Vd = misc.svd(M_copy.reshape([2, 4]), full_matrices=False)
     # new_gate = np.dot(U, Vd).reshape([2, 2, 2])
     # new_gate_ = onp.random.rand(2, 2, 2, 2) * (1+0j)
-    # new_gate_[:, 0, :, :] = new_gate
+    # new_gate_[:, 0, :, :] = new_gate.conj()
     # # return new_gate_
 
+    ######################################################################
     # new_gate = polar(M)
     # We are maximizing Re[\sum_ij A_ij W_ij ] with W^\dagger W = I
     # Re[\sum_ij A_ij W_ij] = Re Tr[ WA^T], A=USV^dagger, A^T = V*SU^T
     # W = (UV^\dagger)* = U* V^T   gives optimal results.
     # Re Tr[ WA^T] = Tr[S]
+    ######################################################################
     U, _, Vd = misc.svd(M, full_matrices=False)
     new_gate = np.dot(U, Vd).conj()
     new_gate = new_gate.reshape([2, 2, 2, 2])

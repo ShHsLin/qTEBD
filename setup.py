@@ -14,12 +14,12 @@ from matplotlib.ticker import LinearLocator
 from matplotlib.ticker import FormatStrFormatter
 
 x=26
-params = {'legend.fontsize':34-x,#'xx-large', 
+params = {'legend.fontsize':36-x,#'xx-large',
                     # 'figure.figsize': (15,6),
                     'axes.labelsize': 36-x,
                     'axes.titlesize': 36-x,
-                    'xtick.labelsize': 34-x,#'xx-large',
-                    'ytick.labelsize': 34-x,#'xx-large',
+                    'xtick.labelsize': 36-x,#'xx-large',
+                    'ytick.labelsize': 36-x,#'xx-large',
                     'figure.autolayout':  False, #True,
                     'mathtext.fontset': u'cm',
                     'font.family': u'serif',
