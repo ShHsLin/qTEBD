@@ -44,7 +44,7 @@ if __name__ == "__main__":
     J = 1.
     dt = 0.01
     save_each = int(0.5 / dt)
-    total_t = 5
+    total_t = 50
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
     H_list =  qTEBD.get_H(Hamiltonian, L, J, g, h)
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
@@ -80,8 +80,14 @@ if __name__ == "__main__":
         # (apply U_list half half #
         ###########################
         qTEBD.right_canonicalize(A_list, no_trunc=True)
-        A_list = qTEBD.apply_U(A_list, U_list, 0)
-        A_list = qTEBD.apply_U(A_list, U_list, 1)
+        if order == '2nd':
+            Ap_list = qTEBD.apply_U(A_list, U_half_list, 0)
+            Ap_list = qTEBD.apply_U(Ap_list, U_list, 1)
+            Ap_list = qTEBD.apply_U(Ap_list, U_half_list, 0)
+        else:
+            Ap_list = qTEBD.apply_U(A_list,  U_list, 0)
+            Ap_list = qTEBD.apply_U(Ap_list, U_list, 1)
+
         qTEBD.right_canonicalize(A_list, no_trunc=True)
         A_list, trunc_error = qTEBD.left_canonicalize(A_list, no_trunc=False, chi=chi)
 
