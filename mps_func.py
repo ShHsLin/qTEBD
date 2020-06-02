@@ -1,5 +1,21 @@
 import numpy as np
 
+def MPS_2_state(mps):
+    '''
+    Goal:
+        Return the full tensor representation (vector) of the state
+    Input:
+        MPS
+    '''
+    Vec = mps[0][:,0,:]
+    for idx in range(1, len(mps)):
+        Vec = np.einsum('pa,qal->pql', Vec, mps[idx])
+        dim_p, dim_q, dim_l = Vec.shape
+        Vec = Vec.reshape([dim_p * dim_q, dim_l])
+
+    return Vec.flatten()
+
+
 def lpr_2_plr(A_list):
     return [np.transpose(a, [1,0,2]) for a in A_list]
 

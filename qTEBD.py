@@ -227,15 +227,7 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
     max_chi_bot = np.amax([np.amax(t.shape) for t in bottom_mps])
     max_chi_top = np.amax([np.amax(t.shape) for t in top_mps])
     print("after sweep down, X(top_mps) = ", max_chi_top, " X(bot_mps) = ", max_chi_bot)
-    ## [TODO] Somewhat the below is not helping.
-    ## Now the bottom_mps is just the product state.
-    ## we do a var_mps here and update the product state.
-    # print("Sweeping product state, overlap (before) : ",
-    #       overlap(top_mps, bottom_mps)
-    #      )
-    # product_state, inner_p = var_A(product_state, top_mps, 'right')
-    # product_state, inner_p = var_A(product_state, top_mps, 'left')
-    # bottom_mps = [t.copy() for t in product_state]
+
 
     overlap_abs = np.abs(overlap(bottom_mps, product_state))
     # print("overlap_abs = ", overlap_abs)
@@ -255,6 +247,9 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
             gate = circuit[var_dep_idx][idx]
             apply_gate(top_mps, gate, idx)
             ## This remove the gate from top_mps
+            ## Because <\phi | U_{ij} | \psi> = inner( U_{ij}^\dagger |\phi>, |\psi> ) 
+            ## applying U would remove the U_{ij}^\dagger, and
+            ## partial_Tr[ |\phi>, |\psi> ] = Env
 
             new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
             circuit[var_dep_idx][idx] = new_gate
