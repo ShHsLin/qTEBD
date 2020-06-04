@@ -1,8 +1,9 @@
 from scipy import integrate
 from scipy.linalg import expm
 import numpy as np
-import misc, os, sys
+import sys
 sys.path.append('..')
+import misc, os
 import qTEBD
 
 '''
@@ -49,14 +50,15 @@ if __name__ == "__main__":
         my_circuit.append(random_layer)
         current_depth = dep_idx + 1
 
-    mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
+    product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
+    mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
     E_list.append(np.sum(qTEBD.expectation_values(mps_of_layer[-1], H_list)))
 
     for dt in [0.05,0.01,0.001]:
         U_list =  qTEBD.make_U(H_list, dt)
         U_half_list =  qTEBD.make_U(H_list, dt/2.)
         for i in range(int(40//dt**(0.75))):
-            mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
+            mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
             # [TODO] remove the assertion below
             assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
@@ -86,10 +88,10 @@ if __name__ == "__main__":
                     assert(len(new_layer) == L -1)
                     my_circuit[var_dep_idx - 1] = new_layer
 
-                mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
+                mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
 
             # [Todo] log the fedility here
-            mps_of_layer = qTEBD.circuit_2_mps(my_circuit)
+            mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
             assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
             current_energy = np.sum(qTEBD.expectation_values(mps_of_last_layer, H_list))

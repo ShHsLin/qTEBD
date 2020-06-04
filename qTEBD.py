@@ -2,6 +2,7 @@ from scipy import integrate
 from scipy.linalg import expm
 import misc, os
 import sys
+## 
 ## We use jax.numpy if possible
 ## or autograd.numpy
 ##
@@ -154,7 +155,7 @@ def circuit_2_mps(circuit, product_state, chi=None):
         [ToDo] : add a truncation according to chi?
 
     return:
-        mps representation of each layer
+        list of mps representation of each layer
         mps_of_layer[0] gives the product state |psi0>
         mps_of_layer[1] gives the U(0) |psi0>
     '''
@@ -181,6 +182,28 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
     Goal:
         Do a sweep from top of the circuit down to product state,
         and do a sweep from bottom of the circuit to top.
+
+        When sweeping from top to bottom, we take the target and bottom mps,
+        we remove one unitary at a time by applying the conjugate unitary.
+        We then form the environment. Once a new unitary is obtained, it is
+        applied to the "bra", i.e. top mps.
+
+        When sweeping from bottom to top, we take the product state, and the
+        top mps resulting from the first part of the algorithm.
+        We remove one unitary at a time from the top mps by applying the
+        conjugate unitary. We then form the environment. Once a new unitary
+        is obtained, it is applied to the bottom mps.
+
+        In this approach, we do not need to store the intermediate mps representation.
+        We avoid it by the removing unitary approach.
+        This however, has a disadvantage that the unitary is not cancelled completely.
+        For example the bottom mps after sweeping from top to bottom usually is not a
+        product state, but bond dimension 2.
+        The top mps would have bond dimension that is larger than necessary.
+
+        The other approach using caching mps and avoid unitary removal is implemented
+        in var_circuit_2 function.
+
     Input:
         target_mps: can be not normalized, but should be in left canonical form.
         bottom_mps: the mps representing the contraction of full circuit
@@ -251,7 +274,25 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
             ## applying U would remove the U_{ij}^\dagger, and
             ## partial_Tr[ |\phi>, |\psi> ] = Env
 
+            # for t_list in [top_mps, bottom_mps, Lp_cache, Rp_cache]:
+            #     for t in t_list:
+            #         if t is not None:
+            #             if not np.isfinite(t).all():
+            #                 print("check before")
+            #                 import pdb;pdb.set_trace()
+
             new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
+            # if not np.isfinite(new_gate).all():
+            #     print("new gate wrong")
+            #     import pdb;pdb.set_trace()
+
+            # for t_list in [top_mps, bottom_mps, Lp_cache, Rp_cache]:
+            #     for t in t_list:
+            #         if t is not None:
+            #             if not np.isfinite(t).all():
+            #                 print("check after")
+            #                 import pdb;pdb.set_trace()
+
             circuit[var_dep_idx][idx] = new_gate
 
             apply_gate(bottom_mps, new_gate, idx)
@@ -264,6 +305,8 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
     print("after sweep up, X(top_mps) = ", max_chi_top, " X(bot_mps) = ", max_chi_bot)
     return bottom_mps, circuit, product_state
 
+def var_citcuit2(target_mps, product_state, circuit):
+    return None
 
 def var_layer(new_mps, layer_gate, mps_old, list_of_A_list=None):
     '''
@@ -451,11 +494,6 @@ def var_gate(new_mps, site, mps_ket):
     new_gate = np.dot(U, Vd).conj()
     new_gate = new_gate.reshape([2, 2, 2, 2])
 
-    # try:
-    #     assert( np.isclose(np.linalg.norm(new_gate_[:,0,:,:]-new_gate[:,0,:,:]), 0.))
-    # except:
-    #     import pdb;pdb.set_trace()
-
     return new_gate
 
 def apply_gate(A_list, gate, idx, move='right'):
@@ -494,6 +532,12 @@ def apply_gate(A_list, gate, idx, move='right'):
         A_list[idx] = np.dot(X, np.diag(Y)).reshape([d1, chi1, chi2])
     else:
         raise
+
+    # for t in A_list:
+    #     try:
+    #         assert np.isfinite(t).all()
+    #     except:
+    #         import pdb;pdb.set_trace()
 
     return A_list
 
