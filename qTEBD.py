@@ -138,6 +138,7 @@ def random_2site_U(d, factor=1e-2):
     # return Q.reshape([d] * 4)
 
 def circuit_2_mps(circuit, product_state, chi=None):
+    #[TODO] extend this to brickwall
     '''
     Input:
         circuit is a list of list of U, i.e.
@@ -155,7 +156,7 @@ def circuit_2_mps(circuit, product_state, chi=None):
         [ToDo] : add a truncation according to chi?
 
     return:
-        list of mps representation of each layer
+        list of mps representation of each layer; each in left canonical form
         mps_of_layer[0] gives the product state |psi0>
         mps_of_layer[1] gives the U(0) |psi0>
     '''
@@ -305,13 +306,65 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
     print("after sweep up, X(top_mps) = ", max_chi_top, " X(bot_mps) = ", max_chi_bot)
     return bottom_mps, circuit, product_state
 
-def var_citcuit2(target_mps, product_state, circuit):
-    return None
+def var_circuit2(target_mps, product_state, circuit):
+    """
+    Goal:
+        Do a sweep updating gates from top of the circuit down to product state,
+        and do a sweep updating gates from bottom of the circuit to top.
 
-def var_layer(new_mps, layer_gate, mps_old, list_of_A_list=None):
+    Input:
+        target_mps: can be not normalized, but should be in left canonical form.
+        product_state
+        circuit
+
+    Output:
+        new_circuit
+    """
+    L = len(target_mps)
+    top_mps = [t.copy() for t in target_mps]  # in left canonical form
+    circuit_depth = len(circuit)
+    mps_of_layer = circuit_2_mps(circuit, product_state) # in left canonical form
+    # All mps in mps_of_layer is in left canonical form
+    top_mps_cache = []
+    top_mps_cache.append([t.copy() for t in top_mps])
+
+    for dep_idx in range(circuit_depth-1, -1, -1):
+        top_mps, new_layer = var_layer(top_mps,
+                                       circuit[dep_idx],
+                                       mps_of_layer[dep_idx],
+                                      )
+        assert(len(new_layer) == L-1)
+        circuit[dep_idx] = new_layer
+        top_mps_cache.append([t.copy() for t in top_mps])
+
+    # [TODO]
+    # bottom_mps = mps_of_layer[0]
+    # for dep_idx in range(0, circuit_depth):
+    #     bottom_mps, new_layer = var_layer(top_mps[-1-dep_idx],
+    # ...
+
+
+    return circuit
+
+def var_layer(top_mps, layer_gate, bottom_mps, list_of_A_list=None):
     '''
-    max
-    <new_mps | layer_gate | mps_old>
+    Goal:
+        See graphical representation below
+    Input:
+        top_mps: in left canonical form
+        layer_gate:
+        bottom_mps: in left canonical form
+        list_of_A_list
+    Output:
+        top_mps, new_layer
+
+
+    We try to maximize the quantity:
+
+    <top_mps | layer_gate | bottom_mps>
+
+    =
+
     |    |    |    |
     -------------------- layer 0
 
@@ -345,25 +398,29 @@ def var_layer(new_mps, layer_gate, mps_old, list_of_A_list=None):
 
     =
 
-    ______________ new_mps
+    ______________ top_mps
     |   |   |
     ______________ layer n
     |   |   |
-    ______________ mps_old
+    ______________ bottom_mps
 
     '''
     L = len(layer_gate) + 1
     if list_of_A_list is None:
-        list_of_A_list, trunc_error = apply_U_all([t.copy() for t in mps_old],
+        # we copy the tensor in bottom_mps, so that bottom_mps is not modified.
+        # [Notice] apply_U_all function modified the A_list inplace.
+        # [Todo] maybe change the behavior above. not inplace?
+        A_list, trunc_err = right_canonicalize([t.copy() for t in bottom_mps])
+        list_of_A_list, trunc_error = apply_U_all(A_list,
                                                   layer_gate,
                                                   cache=True)
     else:
         pass
-    # we copy the tensor in mps_old, so that mps_old is not modified.
-    # [Notice] apply_U_all function modified the A_list inplace.
-    # [Todo] maybe change the behavior above. not inplace?
+
+    # [TODO] To add variational move going backward 
+
     assert(len(list_of_A_list) == L)
-    # L - 1 gate, includding not applying gate
+    # There are L states, because with L-1 gates, including not applying gate
     # idx=0 not applying gate,
     # idx=1, state after applying gate-0 on site-0, site-1.
     # idx=2, state after applying gate-1 on site-1, site-2.
@@ -371,7 +428,8 @@ def var_layer(new_mps, layer_gate, mps_old, list_of_A_list=None):
 
     for idx in range(L - 2, -1, -1):
         mps_cache = list_of_A_list[idx]
-        new_gate = var_gate(new_mps, idx, mps_cache)
+        # [TODO] To add brickwall condition: if brickwall, some return directly identity
+        new_gate = var_gate(top_mps, idx, mps_cache)
         new_layer[idx] = new_gate
         # conjugate the gate
         # <psi|U = (U^\dagger |psi>)^\dagger
@@ -379,9 +437,14 @@ def var_layer(new_mps, layer_gate, mps_old, list_of_A_list=None):
         new_gate_conj = new_gate_conj.reshape([2, 2, 2, 2])
         # new_gate_conj = np.einsum('ijkl->klij', new_gate).conj()
 
-        apply_gate(new_mps, new_gate_conj, idx)
+        apply_gate(top_mps, new_gate_conj, idx, move='left')
 
-    return new_mps, new_layer
+    # top_mps ends up in right canonical form
+    top_mps, trunc_err = left_canonicalize(top_mps)
+    # top_mps brought back to left canonical form
+    assert trunc_err < 1e-12
+
+    return top_mps, new_layer
 
 def var_gate_w_cache(new_mps, site, mps_ket, Lp_cache, Rp_cache):
     '''
@@ -614,6 +677,8 @@ def right_canonicalize(A_list, no_trunc=False, chi=None):
     '''
     Bring mps in right canonical form, assuming the input mps is in
     left canonical form already.
+
+    modification in place
     '''
     L = len(A_list)
     tot_trunc_err = 0.
@@ -652,6 +717,8 @@ def left_canonicalize(A_list, no_trunc=False, chi=None):
     '''
     Bring mps in left canonical form, assuming the input mps is in
     right canonical form already.
+
+    modification in place
     '''
     L = len(A_list)
     tot_trunc_err = 0

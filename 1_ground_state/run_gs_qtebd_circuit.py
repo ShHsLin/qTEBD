@@ -29,9 +29,10 @@ if __name__ == "__main__":
     N_iter = int(sys.argv[4])
     order = str(sys.argv[5])
 
+    h = 0.5
     assert order in ['1st', '2nd']
-    Hamiltonian = 'XXZ'
-    H_list  =  qTEBD.get_H(Hamiltonian, L, J, g)
+    Hamiltonian = 'TFI'
+    H_list  =  qTEBD.get_H(Hamiltonian, L, J, g, h)
 
     my_circuit = []
 
@@ -76,19 +77,21 @@ if __name__ == "__main__":
             # new_mps is the e(-H)|psi0> which is not normalizaed.
 
             for iter_idx in range(N_iter):
-                iter_mps = [A.copy() for A in new_mps]
-                for var_dep_idx in range(current_depth, 0, -1):
-                # for var_dep_idx in range(current_depth, current_depth-1, -1):
-                    # circuit is modified inplace
-                    # new mps is returned
-                    iter_mps, new_layer = qTEBD.var_layer([A.copy() for A in iter_mps],
-                                                          my_circuit[var_dep_idx - 1],
-                                                          mps_of_layer[var_dep_idx - 1],
-                                                         )
-                    assert(len(new_layer) == L -1)
-                    my_circuit[var_dep_idx - 1] = new_layer
+                my_circuit = qTEBD.var_circuit2(new_mps, product_state, my_circuit)
+                ## [TODO] Remove the code below
+                # iter_mps = [A.copy() for A in new_mps]
+                # for var_dep_idx in range(current_depth, 0, -1):
+                # # for var_dep_idx in range(current_depth, current_depth-1, -1):
+                #     # circuit is modified inplace
+                #     # new mps is returned
+                #     iter_mps, new_layer = qTEBD.var_layer([A.copy() for A in iter_mps],
+                #                                           my_circuit[var_dep_idx - 1],
+                #                                           mps_of_layer[var_dep_idx - 1],
+                #                                          )
+                #     assert(len(new_layer) == L -1)
+                #     my_circuit[var_dep_idx - 1] = new_layer
 
-                mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
+                # mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
 
             # [Todo] log the fedility here
             mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
@@ -97,7 +100,7 @@ if __name__ == "__main__":
             current_energy = np.sum(qTEBD.expectation_values(mps_of_last_layer, H_list))
             E_list.append(current_energy)
             t_list.append(t_list[-1]+dt)
-            
+
             print(t_list[-1], E_list[-1])
 
             fidelity_reached = np.abs(qTEBD.overlap(new_mps, mps_of_last_layer))**2 / qTEBD.overlap(new_mps, new_mps)
