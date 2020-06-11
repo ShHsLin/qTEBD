@@ -269,7 +269,7 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
         Rp_cache = [None] * (L-1) + [np.ones([1, 1])]
         for idx in range(L-1):
             gate = circuit[var_dep_idx][idx]
-            apply_gate(top_mps, gate, idx)
+            apply_gate(top_mps, gate, idx, move='right')
             ## This remove the gate from top_mps
             ## Because <\phi | U_{ij} | \psi> = inner( U_{ij}^\dagger |\phi>, |\psi> ) 
             ## applying U would remove the U_{ij}^\dagger, and
@@ -296,7 +296,7 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
 
             circuit[var_dep_idx][idx] = new_gate
 
-            apply_gate(bottom_mps, new_gate, idx)
+            apply_gate(bottom_mps, new_gate, idx, move='right')
 
     ## finish sweeping
     ## bottom_mps is mps_final
@@ -348,7 +348,6 @@ def var_circuit2(target_mps, product_state, circuit):
     # top_mps_cache [0] --> target_mps
     # top_mps_cache [1] --> target_mps + 1-layer
     # top_mps_cache [x] --> target_mps + x-layer
-    # [TODO]
     bottom_mps = bottom_mps_cache[0]
     for dep_idx in range(0, circuit_depth):
         bottom_mps, new_layer = var_layer(top_mps_cache[-2-dep_idx],
@@ -424,6 +423,10 @@ def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
 
     '''
     L = len(layer_gate) + 1
+
+    Lp_cache = [np.ones([1, 1])] + [None] * (L-1)
+    Rp_cache = [None] * (L-1) + [np.ones([1, 1])]
+
     if direction == 'down':
         # Form upward cache
         if list_of_A_list is None:
@@ -447,7 +450,8 @@ def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
         for idx in range(L - 2, -1, -1):
             mps_cache = list_of_A_list[idx]
             # [TODO] To add brickwall condition: if brickwall, some return directly identity
-            new_gate = var_gate(top_mps, idx, mps_cache)
+            new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, mps_cache, Lp_cache, Rp_cache)
+            # new_gate = var_gate(top_mps, idx, mps_cache)
             new_layer[idx] = new_gate
             # conjugate the gate
             # <psi|U = (U^\dagger |psi>)^\dagger
@@ -479,7 +483,8 @@ def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
         bottom_mps, trunc_err = right_canonicalize([t.copy() for t in bottom_mps])
         for idx in range(L-1):
             top_mps = downward_cache_list[-2-idx]
-            new_gate = var_gate(top_mps, idx, bottom_mps)
+            new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
+            # new_gate = var_gate(top_mps, idx, bottom_mps)
             new_layer[idx] = new_gate
             apply_gate(bottom_mps, new_gate, idx, move='right')
 
