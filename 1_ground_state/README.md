@@ -1,4 +1,19 @@
 
+## Example
+
+Running the staircase circuit
+```
+python run_gs_qtebd_circuit.py --L 10 --H TFI --g 1. --h 0. --depth 4 --N_iter 1 --order 2nd
+```
+
+Running the brickwall circuit
+```
+python run_gs_qtebd_brickwall.py --L 10 --H TFI --g 1. --h 0. --depth 4 --N_iter 1 --order 2nd
+```
+
+For more parameters option, see the file parse_args.py 
+
+
 ## qTEBD with MPS
 
 The red line indicate the DMRG result. qTEBD with MPS match with DMRG with same bond dimension exactly when 2nd-order trotter gate is applied.

@@ -138,7 +138,6 @@ def random_2site_U(d, factor=1e-2):
     # return Q.reshape([d] * 4)
 
 def circuit_2_mps(circuit, product_state, chi=None):
-    #[TODO] extend this to brickwall
     '''
     Input:
         circuit is a list of list of U, i.e.
@@ -178,7 +177,9 @@ def circuit_2_mps(circuit, product_state, chi=None):
 
     return mps_of_layer
 
-def var_circuit(target_mps, bottom_mps, circuit, product_state):
+def var_circuit(target_mps, bottom_mps, circuit, product_state,
+                brickwall=False
+               ):
     '''
     Goal:
         Do a sweep from top of the circuit down to product state,
@@ -211,10 +212,10 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
             with product state
         circuit: list of list of unitary
         product_state: the initial product state that the circuit acts on.
+        breakwall: whether using breakwall type of circuit
     Output:
         mps_final: the mps representation of the updated circuit
         circuit: list of list of unitary
-        product_state: the initial product state
     '''
     current_depth = len(circuit)
     L = len(circuit[0]) + 1
@@ -233,8 +234,11 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
             # now bottom_mps is mps without remove_gate,
             # we can now variational finding the optimal gate to replace it.
 
-            new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
-            circuit[var_dep_idx][idx] = new_gate
+            if brickwall and (var_dep_idx + idx) % 2 == 1:
+                new_gate = np.eye(4).reshape([2, 2, 2, 2])
+            else:
+                new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
+                circuit[var_dep_idx][idx] = new_gate
 
             # conjugate the gate
             # <psi|U = (U^\dagger |psi>)^\dagger
@@ -282,7 +286,11 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
             #                 print("check before")
             #                 import pdb;pdb.set_trace()
 
-            new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
+            if brickwall and (var_dep_idx + idx) % 2 == 1:
+                new_gate = np.eye(4).reshape([2, 2, 2, 2])
+            else:
+                new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
+
             # if not np.isfinite(new_gate).all():
             #     print("new gate wrong")
             #     import pdb;pdb.set_trace()
@@ -306,7 +314,8 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
     print("after sweep up, X(top_mps) = ", max_chi_top, " X(bot_mps) = ", max_chi_bot)
     return bottom_mps, circuit
 
-def var_circuit2(target_mps, product_state, circuit):
+def var_circuit2(target_mps, product_state, circuit, brickwall=False):
+    #[TODO] extend this to brickwall
     """
     Goal:
         Do a sweep updating gates from top of the circuit down to product state,
@@ -338,7 +347,9 @@ def var_circuit2(target_mps, product_state, circuit):
         top_mps, new_layer = var_layer(top_mps,
                                        circuit[dep_idx],
                                        bottom_mps_cache[dep_idx],
-                                       direction='down'
+                                       direction='down',
+                                       brickwall=brickwall,
+                                       dep_idx=dep_idx,
                                       )
         assert(len(new_layer) == L-1)
         circuit[dep_idx] = new_layer
@@ -353,13 +364,16 @@ def var_circuit2(target_mps, product_state, circuit):
         bottom_mps, new_layer = var_layer(top_mps_cache[-2-dep_idx],
                                           circuit[dep_idx],
                                           bottom_mps,
-                                          direction='up'
+                                          direction='up',
+                                          brickwall=brickwall,
+                                          dep_idx=dep_idx,
                                          )
         circuit[dep_idx] = new_layer
 
     return bottom_mps, circuit
 
-def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
+def var_layer(top_mps, layer_gate, bottom_mps, direction,
+              brickwall=False, dep_idx=None):
     '''
     Goal:
         See graphical representation below
@@ -367,7 +381,6 @@ def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
         top_mps: in left canonical form
         layer_gate:
         bottom_mps: in left canonical form
-        list_of_A_list
     Output:
         top_mps, new_layer
 
@@ -429,18 +442,16 @@ def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
 
     if direction == 'down':
         # Form upward cache
-        if list_of_A_list is None:
-            # we copy the tensor in bottom_mps, so that bottom_mps is not modified.
-            # [Notice] apply_U_all function modified the A_list inplace.
-            # [Todo] maybe change the behavior above. not inplace?
-            A_list, trunc_err = right_canonicalize([t.copy() for t in bottom_mps])
-            list_of_A_list, trunc_error = apply_U_all(A_list,
-                                                      layer_gate,
-                                                      cache=True)
-        else:
-            pass
 
-        assert(len(list_of_A_list) == L)
+        # we copy the tensor in bottom_mps, so that bottom_mps is not modified.
+        # [Notice] apply_U_all function modified the A_list inplace.
+        # [Todo] maybe change the behavior above. not inplace?
+        A_list, trunc_err = right_canonicalize([t.copy() for t in bottom_mps])
+        upward_cache_list, trunc_error = apply_U_all(A_list,
+                                                     layer_gate,
+                                                     cache=True)
+
+        assert(len(upward_cache_list) == L)
         # There are L states, because with L-1 gates, including not applying gate
         # idx=0 not applying gate,
         # idx=1, state after applying gate-0 on site-0, site-1.
@@ -448,11 +459,15 @@ def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
         new_layer = [None] * (L-1)
 
         for idx in range(L - 2, -1, -1):
-            mps_cache = list_of_A_list[idx]
-            # [TODO] To add brickwall condition: if brickwall, some return directly identity
-            new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, mps_cache, Lp_cache, Rp_cache)
-            # new_gate = var_gate(top_mps, idx, mps_cache)
-            new_layer[idx] = new_gate
+            mps_cache = upward_cache_list[idx]
+            if brickwall and (dep_idx + idx) % 2 == 1:
+                new_gate = np.eye(4).reshape([2,2,2,2])
+                new_layer[idx] = new_gate
+            else:
+                new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, mps_cache, Lp_cache, Rp_cache)
+                # new_gate = var_gate(top_mps, idx, mps_cache)
+                new_layer[idx] = new_gate
+
             # conjugate the gate
             # <psi|U = (U^\dagger |psi>)^\dagger
             new_gate_conj = new_gate.reshape([4, 4]).T.conj()
@@ -483,9 +498,14 @@ def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
         bottom_mps, trunc_err = right_canonicalize([t.copy() for t in bottom_mps])
         for idx in range(L-1):
             top_mps = downward_cache_list[-2-idx]
-            new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
-            # new_gate = var_gate(top_mps, idx, bottom_mps)
-            new_layer[idx] = new_gate
+            if brickwall and (dep_idx + idx) % 2 == 1:
+                new_gate = np.eye(4).reshape([2,2,2,2])
+                new_layer[idx] = new_gate
+            else:
+                new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
+                # new_gate = var_gate(top_mps, idx, bottom_mps)
+                new_layer[idx] = new_gate
+
             apply_gate(bottom_mps, new_gate, idx, move='right')
 
         return bottom_mps, new_layer

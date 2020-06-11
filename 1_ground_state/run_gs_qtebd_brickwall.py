@@ -45,7 +45,6 @@ if __name__ == "__main__":
 
     assert order in ['1st', '2nd']
 
-
     my_circuit = []
 
     t_list = [0]
@@ -59,7 +58,13 @@ if __name__ == "__main__":
         # else:
         #     random_layer = [qTEBD.random_2site_U(2) for i in range(L-1)]
         #     my_circuit.append(random_layer)
-        random_layer = [qTEBD.random_2site_U(2) for i in range(L-1)]
+        random_layer = []
+        for idx in range(L-1):
+            if (idx + dep_idx) % 2 == 0:
+                random_layer.append(qTEBD.random_2site_U(2))
+            else:
+                random_layer.append(np.eye(4).reshape([2,2,2,2]))
+
         my_circuit.append(random_layer)
         current_depth = dep_idx + 1
 
@@ -89,7 +94,7 @@ if __name__ == "__main__":
             # new_mps is the e(-H)|psi0> which is not normalizaed.
 
             for iter_idx in range(N_iter):
-                mps_of_last_layer, my_circuit = qTEBD.var_circuit2(new_mps, product_state, my_circuit)
+                mps_of_last_layer, my_circuit = qTEBD.var_circuit2(new_mps, product_state, my_circuit, brickwall=True)
 
             # [Todo] log the fedility here
             mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
@@ -107,7 +112,7 @@ if __name__ == "__main__":
 
 
 
-    dir_path = 'data/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
+    dir_path = 'data_brickwall/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
@@ -123,7 +128,7 @@ if __name__ == "__main__":
     path = dir_path + filename
     np.save(path, np.array(update_error_list))
 
-    dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
+    dir_path = 'data_brickwall/1d_%s_g%.1f/' % (Hamiltonian, g)
     best_E = np.amin(E_list)
     filename = 'circuit_depth%d_Niter%d_%s_energy.csv' % (depth, N_iter, order)
     path = dir_path + filename
