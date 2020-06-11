@@ -321,32 +321,46 @@ def var_circuit2(target_mps, product_state, circuit):
         new_circuit
     """
     L = len(target_mps)
-    top_mps = [t.copy() for t in target_mps]  # in left canonical form
     circuit_depth = len(circuit)
-    mps_of_layer = circuit_2_mps(circuit, product_state) # in left canonical form
-    # All mps in mps_of_layer is in left canonical form
+
+    top_mps = [t.copy() for t in target_mps]  # in left canonical form
+    bottom_mps_cache = circuit_2_mps(circuit, product_state) # in left canonical form
+    # All mps in bottom_mps_cache is in left canonical form
+
+    #[TODO] Is this necessary?
+    # When append to top_mps_cache, we always need to use copy
+    # such that the cache is really an independent list.
+    # (The other way may be to create a new list everytime in var_layer and return it.)
     top_mps_cache = []
     top_mps_cache.append([t.copy() for t in top_mps])
 
     for dep_idx in range(circuit_depth-1, -1, -1):
         top_mps, new_layer = var_layer(top_mps,
                                        circuit[dep_idx],
-                                       mps_of_layer[dep_idx],
+                                       bottom_mps_cache[dep_idx],
+                                       direction='down'
                                       )
         assert(len(new_layer) == L-1)
         circuit[dep_idx] = new_layer
         top_mps_cache.append([t.copy() for t in top_mps])
 
+    assert( len(top_mps_cache)  == circuit_depth + 1)
+    # top_mps_cache [0] --> target_mps
+    # top_mps_cache [1] --> target_mps + 1-layer
+    # top_mps_cache [x] --> target_mps + x-layer
     # [TODO]
-    # bottom_mps = mps_of_layer[0]
-    # for dep_idx in range(0, circuit_depth):
-    #     bottom_mps, new_layer = var_layer(top_mps[-1-dep_idx],
-    # ...
-
+    bottom_mps = bottom_mps_cache[0]
+    for dep_idx in range(0, circuit_depth):
+        bottom_mps, new_layer = var_layer(top_mps_cache[-2-dep_idx],
+                                          circuit[dep_idx],
+                                          bottom_mps,
+                                          direction='up'
+                                         )
+        circuit[dep_idx] = new_layer
 
     return circuit
 
-def var_layer(top_mps, layer_gate, bottom_mps, list_of_A_list=None):
+def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
     '''
     Goal:
         See graphical representation below
@@ -371,13 +385,14 @@ def var_layer(top_mps, layer_gate, bottom_mps, list_of_A_list=None):
     -------------------- layer 1
     .
     .
-    .
     -------------------- layer n
 
     -------------------- Imaginary time evolution
 
     -------------------- layer n
     .
+    .
+    -------------------- layer x
     .
     .
     -------------------- layer 1
@@ -391,60 +406,87 @@ def var_layer(top_mps, layer_gate, bottom_mps, list_of_A_list=None):
     |    |    |    |
 
     -------------------- Imaginary time evolution
+    .
+    .
+    -------------------- layer x+1
 
-    -------------------- layer n
+    -------------------- layer x
 
-    |____|____|____|____ mps-representation of all layer-(n-1) circuit
+    |____|____|____|____ mps-representation of all layer-(x-1) circuit
 
     =
 
     ______________ top_mps
     |   |   |
-    ______________ layer n
+    ______________ layer x
     |   |   |
     ______________ bottom_mps
 
     '''
     L = len(layer_gate) + 1
-    if list_of_A_list is None:
-        # we copy the tensor in bottom_mps, so that bottom_mps is not modified.
-        # [Notice] apply_U_all function modified the A_list inplace.
-        # [Todo] maybe change the behavior above. not inplace?
-        A_list, trunc_err = right_canonicalize([t.copy() for t in bottom_mps])
-        list_of_A_list, trunc_error = apply_U_all(A_list,
-                                                  layer_gate,
-                                                  cache=True)
+    if direction == 'down':
+        # Form upward cache
+        if list_of_A_list is None:
+            # we copy the tensor in bottom_mps, so that bottom_mps is not modified.
+            # [Notice] apply_U_all function modified the A_list inplace.
+            # [Todo] maybe change the behavior above. not inplace?
+            A_list, trunc_err = right_canonicalize([t.copy() for t in bottom_mps])
+            list_of_A_list, trunc_error = apply_U_all(A_list,
+                                                      layer_gate,
+                                                      cache=True)
+        else:
+            pass
+
+        assert(len(list_of_A_list) == L)
+        # There are L states, because with L-1 gates, including not applying gate
+        # idx=0 not applying gate,
+        # idx=1, state after applying gate-0 on site-0, site-1.
+        # idx=2, state after applying gate-1 on site-1, site-2.
+        new_layer = [None] * (L-1)
+
+        for idx in range(L - 2, -1, -1):
+            mps_cache = list_of_A_list[idx]
+            # [TODO] To add brickwall condition: if brickwall, some return directly identity
+            new_gate = var_gate(top_mps, idx, mps_cache)
+            new_layer[idx] = new_gate
+            # conjugate the gate
+            # <psi|U = (U^\dagger |psi>)^\dagger
+            new_gate_conj = new_gate.reshape([4, 4]).T.conj()
+            new_gate_conj = new_gate_conj.reshape([2, 2, 2, 2])
+            # new_gate_conj = np.einsum('ijkl->klij', new_gate).conj()
+
+            apply_gate(top_mps, new_gate_conj, idx, move='left')
+
+        # top_mps ends up in right canonical form
+        top_mps, trunc_err = left_canonicalize(top_mps)
+        # top_mps brought back to left canonical form
+        assert trunc_err < 1e-12
+
+        return top_mps, new_layer
+    elif direction == 'up':
+        # Form downward cache
+        downward_cache_list = []
+        downward_cache_list.append([t.copy() for t in top_mps])
+        for idx in range(L-2, -1, -1):
+            conj_gate = layer_gate[idx].reshape([4,4]).T.conj()
+            conj_gate = conj_gate.reshape([2, 2, 2, 2])
+            apply_gate(top_mps, conj_gate, idx, move='left')
+            downward_cache_list.append([t.copy() for t in top_mps])
+
+        assert(len(downward_cache_list) == L)
+        new_layer = [None] * (L-1)
+
+        bottom_mps, trunc_err = right_canonicalize([t.copy() for t in bottom_mps])
+        for idx in range(L-1):
+            top_mps = downward_cache_list[-2-idx]
+            new_gate = var_gate(top_mps, idx, bottom_mps)
+            new_layer[idx] = new_gate
+            apply_gate(bottom_mps, new_gate, idx, move='right')
+
+        return bottom_mps, new_layer
+
     else:
-        pass
-
-    # [TODO] To add variational move going backward 
-
-    assert(len(list_of_A_list) == L)
-    # There are L states, because with L-1 gates, including not applying gate
-    # idx=0 not applying gate,
-    # idx=1, state after applying gate-0 on site-0, site-1.
-    # idx=2, state after applying gate-1 on site-1, site-2.
-    new_layer = [None] * (L-1)
-
-    for idx in range(L - 2, -1, -1):
-        mps_cache = list_of_A_list[idx]
-        # [TODO] To add brickwall condition: if brickwall, some return directly identity
-        new_gate = var_gate(top_mps, idx, mps_cache)
-        new_layer[idx] = new_gate
-        # conjugate the gate
-        # <psi|U = (U^\dagger |psi>)^\dagger
-        new_gate_conj = new_gate.reshape([4, 4]).T.conj()
-        new_gate_conj = new_gate_conj.reshape([2, 2, 2, 2])
-        # new_gate_conj = np.einsum('ijkl->klij', new_gate).conj()
-
-        apply_gate(top_mps, new_gate_conj, idx, move='left')
-
-    # top_mps ends up in right canonical form
-    top_mps, trunc_err = left_canonicalize(top_mps)
-    # top_mps brought back to left canonical form
-    assert trunc_err < 1e-12
-
-    return top_mps, new_layer
+        raise NotImplementedError
 
 def var_gate_w_cache(new_mps, site, mps_ket, Lp_cache, Rp_cache):
     '''
@@ -559,7 +601,7 @@ def var_gate(new_mps, site, mps_ket):
 
     return new_gate
 
-def apply_gate(A_list, gate, idx, move='right'):
+def apply_gate(A_list, gate, idx, move):
     '''
     modification inplace
     '''
@@ -788,6 +830,10 @@ def get_entanglement(A_list):
     return ent_list
 
 def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
+    #[TODO] Rewrite the function by using apply_gate. Make apply_gate more general
+    # with trunc, chi argument.
+    # Make this function as an application of apply_gate only.
+    #[TODO] Write also applying gates backward (L-2, L-1), (L-3, L-2), ...?
     '''
     Goal:
         apply a list of two site gates in U_list according to the order to sites
