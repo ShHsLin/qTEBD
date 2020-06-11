@@ -77,21 +77,7 @@ if __name__ == "__main__":
             # new_mps is the e(-H)|psi0> which is not normalizaed.
 
             for iter_idx in range(N_iter):
-                my_circuit = qTEBD.var_circuit2(new_mps, product_state, my_circuit)
-                ## [TODO] Remove the code below
-                # iter_mps = [A.copy() for A in new_mps]
-                # for var_dep_idx in range(current_depth, 0, -1):
-                # # for var_dep_idx in range(current_depth, current_depth-1, -1):
-                #     # circuit is modified inplace
-                #     # new mps is returned
-                #     iter_mps, new_layer = qTEBD.var_layer([A.copy() for A in iter_mps],
-                #                                           my_circuit[var_dep_idx - 1],
-                #                                           mps_of_layer[var_dep_idx - 1],
-                #                                          )
-                #     assert(len(new_layer) == L -1)
-                #     my_circuit[var_dep_idx - 1] = new_layer
-
-                # mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
+                mps_of_last_layer, my_circuit = qTEBD.var_circuit2(new_mps, product_state, my_circuit)
 
             # [Todo] log the fedility here
             mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)

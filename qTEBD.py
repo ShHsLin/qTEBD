@@ -304,7 +304,7 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state):
     max_chi_bot = np.amax([np.amax(t.shape) for t in bottom_mps])
     max_chi_top = np.amax([np.amax(t.shape) for t in top_mps])
     print("after sweep up, X(top_mps) = ", max_chi_top, " X(bot_mps) = ", max_chi_bot)
-    return bottom_mps, circuit, product_state
+    return bottom_mps, circuit
 
 def var_circuit2(target_mps, product_state, circuit):
     """
@@ -358,7 +358,7 @@ def var_circuit2(target_mps, product_state, circuit):
                                          )
         circuit[dep_idx] = new_layer
 
-    return circuit
+    return bottom_mps, circuit
 
 def var_layer(top_mps, layer_gate, bottom_mps, direction, list_of_A_list=None):
     '''

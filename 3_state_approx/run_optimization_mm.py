@@ -136,8 +136,8 @@ if __name__ == "__main__":
         #################################
         #### variational optimzation ####
         #################################
-        mps_of_last_layer, my_circuit, product_state = qTEBD.var_circuit(target_mps, mps_of_last_layer,
-                                                                         my_circuit, product_state)
+        mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+                                                          my_circuit, product_state)
         #################
         #### Measure ####
         #################

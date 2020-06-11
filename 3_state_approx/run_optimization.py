@@ -35,7 +35,7 @@ if __name__ == "__main__":
     cov_crit = tol * 0.1
     max_N_iter = N_iter
 
-    assert order in ['1st', '2nd']
+    assert order in ['1st', '2nd', '4th']
 
     Hamiltonian = 'TFI'
     H_list  =  qTEBD.get_H(Hamiltonian, L, J, g, h)
@@ -114,8 +114,8 @@ if __name__ == "__main__":
         #################################
         #### variational optimzation ####
         #################################
-        mps_of_last_layer, my_circuit, product_state = qTEBD.var_circuit(target_mps, mps_of_last_layer,
-                                                                         my_circuit, product_state)
+        mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+                                                          my_circuit, product_state)
         #################
         #### Measure ####
         #################
