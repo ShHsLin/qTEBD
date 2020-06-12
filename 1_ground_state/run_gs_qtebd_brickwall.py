@@ -52,12 +52,6 @@ if __name__ == "__main__":
     update_error_list = [0.]
 
     for dep_idx in range(depth):
-        # if dep_idx > 0:
-        #     identity_layer = [np.eye(4).reshape([2, 2, 2, 2]) for i in range(L-1)]
-        #     my_circuit.append(identity_layer)
-        # else:
-        #     random_layer = [qTEBD.random_2site_U(2) for i in range(L-1)]
-        #     my_circuit.append(random_layer)
         random_layer = []
         for idx in range(L-1):
             if (idx + dep_idx) % 2 == 0:
