@@ -1,4 +1,5 @@
 import numpy as np
+import misc
 
 def MPS_2_state(mps):
     '''
@@ -249,3 +250,30 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
 
     return trunc_err
 
+
+def state_2_MPS(psi, L, chimax):
+    '''
+    Input:
+        psi: the state
+        L: the system size
+        chimax: the maximum bond dimension
+    '''
+    psi_aR = np.reshape(psi, (1, 2**L))
+    Ms = []
+    for n in range(1, L+1):
+        chi_n, dim_R = psi_aR.shape
+        assert dim_R == 2**(L-(n-1))
+        psi_LR = np.reshape(psi_aR, (chi_n*2, dim_R//2))
+        M_n, lambda_n, psi_tilde = misc.svd(psi_LR, full_matrices=False)
+        if len(lambda_n) > chimax:
+            keep = np.argsort(lambda_n)[::-1][:chimax]
+            M_n = M_n[:, keep]
+            lambda_n = lambda_n[keep]
+            psi_tilde = psi_tilde[keep, :]
+        chi_np1 = len(lambda_n)
+        M_n = np.reshape(M_n, (chi_n, 2, chi_np1))
+        Ms.append(M_n)
+        psi_aR = lambda_n[:, np.newaxis] * psi_tilde[:,:]
+    assert psi_aR.shape == (1, 1)
+    print("remaining in compress: ", psi_aR)
+    return lpr_2_plr(Ms)
