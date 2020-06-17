@@ -3,6 +3,7 @@ import pickle
 import os, sys
 sys.path.append('..')
 import qTEBD, misc
+import parse_args
 
 '''
     Algorithm:
@@ -19,15 +20,17 @@ import qTEBD, misc
 if __name__ == "__main__":
     np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
-    L = int(sys.argv[1])
+
+    args = parse_args.parse_args()
+
+    L = args.L
     J = 1.
-    g = float(sys.argv[2])
-    h = float(sys.argv[3])
-    depth = int(sys.argv[4])
-    N_iter = int(sys.argv[5])
-    order = str(sys.argv[6])
-    ## the target state is corresponding to time T.
-    T = float(sys.argv[7])
+    g = args.g
+    h = args.h
+    depth = args.depth
+    N_iter = args.N_iter
+    order = args.order  ## this is a parameter that is not used
+    T = args.T ## the target state is corresponding to time T.
 
 
     save_each = 100

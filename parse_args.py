@@ -39,7 +39,10 @@ def parse_args():
                         help='order in the trotterization used in time evolution'
                         'option: 1st, 2nd. Default: 1st',
                         default='1st', type=str)
-
+    parser.add_argument('--T', dest='T',
+                        help='the time T. Setting for target states or ending time evolution'
+                        'Default: 0.',
+                        default=0., type=float)
 
 
     if len(sys.argv) == 1:
