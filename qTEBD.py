@@ -2,6 +2,7 @@ from scipy import integrate
 from scipy.linalg import expm
 import misc, os
 import sys
+import mps_func
 ## 
 ## We use jax.numpy if possible
 ## or autograd.numpy
@@ -185,8 +186,8 @@ def circuit_2_mpo(circuit, mpo, chi=None):
         circuit[0] corresponds to layer-0,
         circuit[1] corresponds to layer-1, and so on.
 
-        mpo: is the operator with [left, phys_up, right, phys_down],
-        which we denote as [l, p, r, q], or [l, u, r, d]
+        mpo: is the operator with [phys_up, left right, phys_down],
+        which we denote as [p, l, r, q].
 
     Goal:
         We compute the mpo representaion of each layer
@@ -207,17 +208,21 @@ def circuit_2_mpo(circuit, mpo, chi=None):
     A_list = [t.copy() for t in mpo]
 
     mpo_of_layer = []
-    mpo_of_layer.append([A.copy() for A in A_list])
     # A_list is modified inplace always.
     # so we always have to copy A tensors.
     for dep_idx in range(depth):
         U_list = circuit[dep_idx]
         ### A_list is modified inplace
-        raise NotImplementedError
-        ## [TODO] the below should be changed
-        right_canonicalize(A_list)
-        A_list, trunc_error = apply_U_all(A_list, U_list, cache=False)
+        A_list = mps_func.plrq_2_plr(A_list)
+        right_canonicalize(A_list, normalized=False)
+        A_list = mps_func.plr_2_plrq(A_list)
         mpo_of_layer.append([A.copy() for A in A_list])
+
+        A_list, trunc_error = apply_U_all_mpo(A_list, U_list, cache=False,
+                                              normalized=False
+                                             )
+
+    mpo_of_layer.append([A.copy() for A in A_list])
 
     return mpo_of_layer
 
@@ -339,6 +344,155 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state,
     max_chi_top = np.amax([np.amax(t.shape) for t in top_mps])
     print("after sweep up, X(top_mps) = ", max_chi_top, " X(bot_mps) = ", max_chi_bot)
     return bottom_mps, circuit
+
+def var_circuit_mpo(target_mpo, circuit,
+                    brickwall=False
+                   ):
+    '''
+    Goal:
+        Do a full sweep down and a full sweep up, to find the set of {U_i} that gives
+        arg max_{U_i} Re Tr [U1*U2*U3... target_MPO ]
+        Notice that target_MPO is the conjugate of the approximated N-qubit operator,
+        i.e. U1*U2*U3... ~= complex_conjugate(target_MPO)
+
+        1.) We take the target_MPO and apply the circuit on top.
+        2.) Sweeping from top to bottom by removing one unitary at a time.
+            This is done by applying conjugated unitary.
+
+            We then form the environment and get the new gate.
+            The new gate obtained is applied to the lower part of MPO.
+
+        3.) When sweeping from bottom to top, we take the mpo, and apply the full circuit
+            to the lower part of the mpo.
+            Again one unitary is removed at a time from below to get the new gate.
+            New gate is obtained from the environment.
+            New gate is applied to the upper part of MPO.
+
+        In this approach, we do not need to store the intermediate mps representation.
+        We avoid it by the removing unitary approach.
+        This however, has a disadvantage that the unitary is not cancelled completely.
+
+        Might need to extend the var_circuit2 to mpo version.
+
+    Input:
+        target_mpo:
+            the conjugated N-qubit operator to be approximated.
+            conjugation should be taken care of outside this function.
+            can be not normalized
+
+        circuit: list of list of unitary
+        breakwall: whether using breakwall type of circuit
+    Output:
+        mpo_final: the mps representation of the updated circuit
+        circuit: list of list of unitary
+
+
+    Note:
+        apply_gate_mpo(A_list, gate, idx, pos, move, no_trunc=False, chi=None, normalized=False)
+        var_gate_mpo_w_cache(mpo, site, Lp_cache, Rp_cache)
+    '''
+    total_trunc_error = 0.
+    current_depth = len(circuit)
+    L = len(circuit[0]) + 1
+    # top_mps = [A.copy() for A in target_mps]
+
+    mpo_of_layer = circuit_2_mpo(circuit, target_mpo)
+    iter_mpo = mpo_of_layer[-1]
+
+    # iter_mpo2 is a copy of target_mpo
+    iter_mpo2 = [t.copy() for t in mpo_of_layer[0]]
+    iter_mpo2 = mps_func.plrq_2_plr(iter_mpo2)
+    left_canonicalize(iter_mpo2, normalized=False)
+    iter_mpo2 = mps_func.plr_2_plrq(iter_mpo2)
+
+
+    # [TODO] add an function to check the cost function?
+    # print("Sweeping from top to bottom, overlap (before) : ",
+    #       overlap(target_mps, bottom_mps))
+
+    for var_dep_idx in range(current_depth-1, -1, -1):
+        Lp_cache = [np.ones([1])] + [None] * (L-1)
+        Rp_cache = [None] * (L-1) + [np.ones([1])]
+        for idx in range(L - 2, -1, -1):
+            remove_gate = circuit[var_dep_idx][idx]
+            remove_gate_conj = remove_gate.reshape([4, 4]).T.conj()
+            remove_gate_conj = remove_gate_conj.reshape([2, 2, 2, 2])
+            trunc_error = apply_gate_mpo(iter_mpo, remove_gate_conj, idx, pos='up', move='left')
+            total_trunc_error += trunc_error
+            # now iter_mpo is mpo without remove_gate,
+            # we can now variational finding the optimal gate to replace it.
+
+            if brickwall and (var_dep_idx + idx) % 2 == 1:
+                new_gate = np.eye(4).reshape([2, 2, 2, 2])
+            else:
+                new_gate, Lp_cache, Rp_cache = var_gate_mpo_w_cache(iter_mpo, idx, Lp_cache, Rp_cache)
+                circuit[var_dep_idx][idx] = new_gate
+
+            trunc_error = apply_gate_mpo(iter_mpo, new_gate, idx, pos='down', move='left')
+            total_trunc_error += trunc_error
+            trunc_error = apply_gate_mpo(iter_mpo2, new_gate, idx, pos='down', move='left')
+
+
+        iter_mpo = mps_func.plrq_2_plr(iter_mpo)
+        left_canonicalize(iter_mpo, normalized=False)
+        iter_mpo = mps_func.plr_2_plrq(iter_mpo)
+
+        iter_mpo2 = mps_func.plrq_2_plr(iter_mpo2)
+        left_canonicalize(iter_mpo2, normalized=False)
+        iter_mpo2 = mps_func.plr_2_plrq(iter_mpo2)
+
+    max_chi_mpo = np.amax([np.amax(t.shape) for t in iter_mpo])
+    print("after sweep down, X(mpo) = ", max_chi_mpo)
+
+    print("total truncation along the sweep : ", total_trunc_error)
+    assert total_trunc_error < 1e-12
+    total_trunc_error = 0.
+
+    # [TODO] add an function to check the cost function?
+    # overlap_abs = np.abs(overlap(bottom_mps, product_state))
+    # # print("overlap_abs = ", overlap_abs)
+    # assert np.isclose(overlap_abs, 1, rtol=1e-8)
+    # bottom_mps = [t.copy() for t in product_state]
+
+    # print("Sweeping from bottom to top, overlap (before) : ",
+    #       overlap(top_mps, bottom_mps)
+    #      )
+
+    for var_dep_idx in range(0, current_depth):
+        iter_mpo2 = mps_func.plrq_2_plr(iter_mpo2)
+        right_canonicalize(iter_mpo2, normalized=False)
+        iter_mpo2 = mps_func.plr_2_plrq(iter_mpo2)
+
+        Lp_cache = [np.ones([1])] + [None] * (L-1)
+        Rp_cache = [None] * (L-1) + [np.ones([1])]
+        for idx in range(L-1):
+            remove_gate = circuit[var_dep_idx][idx]
+            remove_gate_conj = remove_gate.reshape([4, 4]).T.conj()
+            remove_gate_conj = remove_gate_conj.reshape([2, 2, 2, 2])
+            trunc_error = apply_gate_mpo(iter_mpo2, remove_gate_conj, idx, pos='down', move='right')
+            total_trunc_error += trunc_error
+
+            if brickwall and (var_dep_idx + idx) % 2 == 1:
+                new_gate = np.eye(4).reshape([2, 2, 2, 2])
+            else:
+                new_gate, Lp_cache, Rp_cache = var_gate_mpo_w_cache(iter_mpo2, idx, Lp_cache, Rp_cache)
+                circuit[var_dep_idx][idx] = new_gate
+
+            circuit[var_dep_idx][idx] = new_gate
+
+            trunc_error = apply_gate_mpo(iter_mpo2, new_gate, idx, pos='up', move='right')
+            total_trunc_error += trunc_error
+
+    ## finish sweeping
+
+    max_chi_mpo = np.amax([np.amax(t.shape) for t in iter_mpo2])
+    print("after sweep down, X(mpo) = ", max_chi_mpo)
+    print("total truncation along the sweep : ", total_trunc_error)
+    assert total_trunc_error < 1e-12
+    total_trunc_error = 0.
+
+    return iter_mpo2, circuit
+
 
 def var_circuit2(target_mps, product_state, circuit, brickwall=False):
     #[TODO] extend this to brickwall
@@ -541,9 +695,17 @@ def var_layer(top_mps, layer_gate, bottom_mps, direction,
 
 def var_gate_w_cache(new_mps, site, mps_ket, Lp_cache, Rp_cache):
     '''
-    max
-    <new_mps | gate | mps_ket>
-    where gate is actting on (site, site+1)
+    Goal:
+        to find argmax_{gate} <new_mps | gate | mps_ket>
+        where gate is actting on (site, site+1)
+    Input:
+        new_mps: list of tensors of the new_mps, convention [p, l, r]
+        site: gate is applying on (site, site+1)
+        mps_ket: list of tensors of the mps_ket, convention [p, l, r]
+        Lp_cache: matrix
+        Rp_cache: matrix
+    Return:
+        new_gate
     '''
     L = len(new_mps)
     # Lp = np.ones([1, 1])
@@ -588,6 +750,62 @@ def var_gate_w_cache(new_mps, site, mps_ket, Lp_cache, Rp_cache):
     new_gate = new_gate.reshape([2, 2, 2, 2])
 
     return new_gate, Lp_cache, Rp_cache
+
+def var_gate_mpo_w_cache(mpo, site, Lp_cache, Rp_cache):
+    '''
+    Goal:
+        to find argmax_{gate}  Tr[  gate \hat{O} ]
+        where gate is actting on (site, site+1)
+    Input:
+        mpo: list of tensors of the mpo operator, convention [p, l, r, q]
+        site: gate is applying on (site, site+1)
+        Lp_cache: vector
+        Rp_cache: vector
+    Return:
+        new_gate
+    '''
+    L = len(mpo)
+
+    # Lp = np.ones([1])
+    # Lp_list = [Lp, None, None, ...]
+
+    for i in range(site):
+        Lp = Lp_cache[i]
+        if Lp_cache[i+1] is None:
+            Lp = np.tensordot(Lp, mpo[i], axes=(0, 1))
+            Lp = np.trace(Lp, axis1=0, axis2=2)
+            Lp_cache[i+1] = Lp
+        else:
+            pass
+
+    # Rp = np.ones([1])
+    # Rp_list = [Rp, None, None, ...]
+
+    for i in range(L-1, site+1, -1):
+        Rp = Rp_cache[i]
+        if Rp_cache[i-1] is None:
+            Rp = np.tensordot(mpo[i], Rp, axes=(2, 0))
+            Rp = np.trace(Rp, axis1=0, axis2=2)
+            Rp_cache[i-1] = Rp
+
+    L_env = Lp_cache[site]
+    # L_env = Lp_list[site]
+    R_env = Rp_cache[site+1]
+    # R_env = Rp_list[L-2-site]
+
+    left_site = np.tensordot(L_env, mpo[site], axes=(0, 1))  #[p1, r, q1]
+    right_site = np.tensordot(mpo[site+1], R_env, axes=(2, 0))  #[p2, l, q2]
+    M = np.tensordot(left_site, right_site, axes=(1, 1))  #[p1, q1, p2, q2]
+    M = M.transpose([0, 2, 1, 3])  #lower_p1, lower_p2, upper_q1, upper_q2
+    M = M.reshape([4, 4])
+
+    ### For detailed explanation of the formula, see function var_gate
+    U, _, Vd = misc.svd(M, full_matrices=False)
+    new_gate = np.dot(U, Vd).conj()
+    new_gate = new_gate.reshape([2, 2, 2, 2])
+
+    return new_gate, Lp_cache, Rp_cache
+
 
 def var_gate(new_mps, site, mps_ket):
     '''
@@ -668,8 +886,8 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
     Return:
         trunc_error
     '''
-    d1,chi1,chi2 = A_list[idx].shape
-    d2,chi2,chi3 = A_list[idx + 1].shape
+    d1, chi1, chi2 = A_list[idx].shape
+    d2, chi2, chi3 = A_list[idx + 1].shape
 
     theta = np.tensordot(A_list[idx], A_list[idx + 1],axes=(2,1))
     theta = np.tensordot(gate, theta, axes=([0,1],[0,2]))
@@ -697,10 +915,10 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
 
     if move == 'right':
         X=np.reshape(X, (d1, chi1, chi2))
-        A_list[idx]   = X.reshape([d1, chi1, chi2])
+        A_list[idx] = X.reshape([d1, chi1, chi2])
         A_list[idx + 1] = np.dot(np.diag(Y), Z).reshape([chi2, d2, chi3]).transpose([1, 0, 2])
     elif move == 'left':
-        A_list[idx + 1]   = np.transpose(Z.reshape([chi2, d2, chi3]), [1, 0, 2])
+        A_list[idx + 1] = np.transpose(Z.reshape([chi2, d2, chi3]), [1, 0, 2])
         A_list[idx] = np.dot(X, np.diag(Y)).reshape([d1, chi1, chi2])
     else:
         raise
@@ -713,6 +931,68 @@ def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=Fal
     #         assert np.isfinite(t).all()
     #     except:
     #         import pdb;pdb.set_trace()
+
+    return trunc_error
+
+def apply_gate_mpo(A_list, gate, idx, pos, move, no_trunc=False, chi=None, normalized=False):
+    '''
+    [modification inplace]
+    Goal:
+        Apply gate on the MPO A_list
+    Input:
+        A_list: the list of tensors; convention [phys_up, left, right, phys_down]
+        gate: the gate to apply (U[23,01]), [left_down, right_down, left_up, right_up]
+
+        idx: the gate is applying on (idx, idx+1)
+        pos: the position the gate is apply, need to be either up or down.
+        move: the direction to combine tensor after SVD
+        no_trunc: if True, then even numerical zeros are not truncated
+        chi: the truncation bond dimension provided.
+
+    Return:
+        trunc_error
+    '''
+    assert pos in ['up', 'down']
+
+    p1, chi1, chi2, q1 = A_list[idx].shape
+    p2, chi2, chi3, q2 = A_list[idx + 1].shape
+
+    theta = np.tensordot(A_list[idx], A_list[idx + 1],axes=(2,1))  #[p1, chi1, q1, p2, chi3, q2]
+    if pos == 'up':
+        theta = np.tensordot(gate, theta, axes=([0,1],[0,3]))  #[p3, p4, chi1, q1, chi3, q2]
+        theta = np.reshape(np.transpose(theta,(0,2,3,1,4,5)), (p1*chi1*q1, p2*chi3*q2))
+    else:
+        theta = np.tensordot(gate, theta, axes=([2,3],[2,5]))  #[q3, q4, p1, chi1, p2, chi3]
+        theta = np.reshape(np.transpose(theta,(2,3,0,4,5,1)), (p1*chi1*q1, p2*chi3*q2))
+
+    X, Y, Z = misc.svd(theta, full_matrices=0)
+
+    if no_trunc:
+        chi2 = np.size(Y)
+    else:
+        chi2 = np.sum(Y>1e-14)
+        if chi is not None:
+            chi2 = np.amin([chi2, chi])
+
+
+    arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
+    trunc_idx = (np.argsort(Y)[::-1])[chi2:]
+    trunc_error = np.sum(Y[trunc_idx] ** 2) / np.sum(Y**2)
+    Y = Y[arg_sorted_idx]  # chi2
+    if normalized:
+        Y = Y / np.linalg.norm(Y)
+
+    X = X[: ,arg_sorted_idx]  # (p1*chi1*q1, chi2)
+    Z = Z[arg_sorted_idx, :]  # (chi2, p2*chi3*q2)
+
+    if move == 'right':
+        A_list[idx] = np.reshape(X, (p1, chi1, q1, chi2)).transpose([0, 1, 3, 2])
+        A_list[idx + 1] = np.dot(np.diag(Y), Z).reshape([chi2, p2, chi3, q2]).transpose([1, 0, 2, 3])
+    elif move == 'left':
+        A_list[idx + 1] = np.transpose(Z.reshape([chi2, p2, chi3, q2]), [1, 0, 2, 3])
+        A_list[idx] = np.dot(X, np.diag(Y)).reshape([p1, chi1, q1, chi2]).transpose([0, 1, 3, 2])
+    else:
+        raise
 
     return trunc_error
 
@@ -785,7 +1065,7 @@ def expectation_values(A_list, H_list, check_norm=True):
 
     return E_list
 
-def right_canonicalize(A_list, no_trunc=False, chi=None):
+def right_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
     '''
     Bring mps in right canonical form, assuming the input mps is in
     left canonical form already.
@@ -813,7 +1093,9 @@ def right_canonicalize(A_list, no_trunc=False, chi=None):
 
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi1]
         Y = Y[arg_sorted_idx]
-        Y = Y / np.linalg.norm(Y)
+        if normalized:
+            Y = Y / np.linalg.norm(Y)
+
         X = X[: ,arg_sorted_idx]
         Z = Z[arg_sorted_idx, :]
 
@@ -825,7 +1107,7 @@ def right_canonicalize(A_list, no_trunc=False, chi=None):
     A_list[0] = A_list[0] / np.linalg.norm(A_list[0])
     return A_list, tot_trunc_err
 
-def left_canonicalize(A_list, no_trunc=False, chi=None):
+def left_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
     '''
     Bring mps in left canonical form, assuming the input mps is in
     right canonical form already.
@@ -853,7 +1135,9 @@ def left_canonicalize(A_list, no_trunc=False, chi=None):
 
         arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
         Y = Y[arg_sorted_idx]
-        Y = Y / np.linalg.norm(Y)
+        if normalized:
+            Y = Y / np.linalg.norm(Y)
+
         X = X[: ,arg_sorted_idx]
         Z = Z[arg_sorted_idx, :]
 
@@ -908,6 +1192,9 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
         [(0, 1), (1, 2), (2, 3), ... ]
     Input:
         A_list: the MPS representation to which the U_list apply
+                To make truncation, A_list should be in right canonical form.
+                If no truncation made, this does not matter.
+
         U_list: a list of two site unitary gates
         cache: indicate whether the intermediate state should be store.
 
@@ -925,8 +1212,53 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
 
     tot_trunc_err = 0.
     for i in range(L-1):
+        gate = U_list[i]
         trunc_error = apply_gate(A_list, gate, i, move='right', no_trunc=no_trunc,
                                  chi=chi, normalized=True)
+
+        tot_trunc_err = tot_trunc_err + trunc_error
+
+        if cache:
+            list_A_list.append([A.copy() for A in A_list])
+        else:
+            pass
+
+    if cache:
+        return list_A_list, tot_trunc_err
+    else:
+        return A_list, tot_trunc_err
+
+def apply_U_all_mpo(A_list, U_list, cache=False, no_trunc=False, chi=None, normalized=False):
+    '''
+    Goal:
+        apply a list of two site gates in U_list according to the order to sites
+        [(0, 1), (1, 2), (2, 3), ... ]
+    Input:
+        A_list: the list of tensors of MPO to which the U_list apply
+                To make truncation, A_list should be in right canonical form.
+                If no truncation made, this does not matter.
+
+        U_list: a list of two site unitary gates
+        cache: indicate whether the intermediate state should be store.
+
+        no_trunc: indicate whether truncation should take place
+        chi: truncate to bond dimension chi, if chi is given. Must make sure no_trunc is True.
+    Output:
+        if cache is True, we will return a list_A_list,
+        which gives the list of mps of length L, which corresponds to
+        applying 0, 1, 2, ... L-1 gates.
+    '''
+    L = len(A_list)
+    if cache:
+        list_A_list = []
+        list_A_list.append([A.copy() for A in A_list])
+
+    tot_trunc_err = 0.
+    for i in range(L-1):
+        gate = U_list[i]
+        trunc_error = apply_gate_mpo(A_list, gate, i, pos='up', move='right',
+                                     no_trunc=no_trunc,
+                                     chi=chi, normalized=normalized)
 
         tot_trunc_err = tot_trunc_err + trunc_error
 

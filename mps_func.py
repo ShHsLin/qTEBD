@@ -1,21 +1,21 @@
 import numpy as np
 import misc
 
-def MPS_2_state(mps):
-    '''
-    Goal:
-        Return the full tensor representation (vector) of the state
-    Input:
-        MPS
-    '''
-    Vec = mps[0][:,0,:]
-    for idx in range(1, len(mps)):
-        Vec = np.einsum('pa,qal->pql', Vec, mps[idx])
-        dim_p, dim_q, dim_l = Vec.shape
-        Vec = Vec.reshape([dim_p * dim_q, dim_l])
+def plrq_2_plr(A_list):
+    new_A_list = []
+    for a in A_list:
+        p_dim, l_dim, r_dim, q_dim = a.shape
+        new_A_list.append(np.transpose(a, [0,3,1,2]).reshape([p_dim*q_dim, l_dim, r_dim]))
 
-    return Vec.flatten()
+    return new_A_list
 
+def plr_2_plrq(A_list, p_dim=2, q_dim=2):
+    new_A_list = []
+    for a in A_list:
+        pq_dim, l_dim, r_dim = a.shape
+        new_A_list.append(np.reshape(a, [p_dim, q_dim, l_dim, r_dim]).transpose([0, 2, 3, 1]))
+
+    return new_A_list
 
 def lpr_2_plr(A_list):
     return [np.transpose(a, [1,0,2]) for a in A_list]
@@ -250,6 +250,20 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
 
     return trunc_err
 
+def MPS_2_state(mps):
+    '''
+    Goal:
+        Return the full tensor representation (vector) of the state
+    Input:
+        MPS: in [p,l,r] form
+    '''
+    Vec = mps[0][:,0,:]
+    for idx in range(1, len(mps)):
+        Vec = np.einsum('pa,qal->pql', Vec, mps[idx])
+        dim_p, dim_q, dim_l = Vec.shape
+        Vec = Vec.reshape([dim_p * dim_q, dim_l])
+
+    return Vec.flatten()
 
 def state_2_MPS(psi, L, chimax):
     '''
@@ -275,5 +289,20 @@ def state_2_MPS(psi, L, chimax):
         Ms.append(M_n)
         psi_aR = lambda_n[:, np.newaxis] * psi_tilde[:,:]
     assert psi_aR.shape == (1, 1)
-    print("remaining in compress: ", psi_aR)
     return lpr_2_plr(Ms)
+
+def MPO_2_operator(mpo):
+    '''
+    Goal:
+        Return the full operator (2**L, 2**L)
+    Input:
+        MPO: in [p, l, r, q] form
+    '''
+    Op = mpo[0][:, 0, :, :]
+    for idx in range(1, len(mpo)):
+        Op = np.einsum('paq,PalQ->pPlqQ', Op, mpo[idx])
+        dim_p, dim_P, dim_l, dim_q, dim_Q = Op.shape
+        Op = Op.reshape([dim_p*dim_P, dim_l, dim_q*dim_Q])
+
+    assert Op.shape[1] == 1
+    return Op[:,0,:]
