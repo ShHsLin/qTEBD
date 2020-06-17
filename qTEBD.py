@@ -148,8 +148,8 @@ def circuit_2_mps(circuit, product_state, chi=None):
     Goal:
         We compute the mps representaion of each layer
         without truncation.
-        The mps is not in necessary in canonical form.
-        But since we do not make any truncation, that
+        The mps is in canonical form.
+        We do not make any truncation, that
         should be fine.
 
         [ToDo] : add a truncation according to chi?
@@ -176,6 +176,50 @@ def circuit_2_mps(circuit, product_state, chi=None):
         mps_of_layer.append([A.copy() for A in A_list])
 
     return mps_of_layer
+
+def circuit_2_mpo(circuit, mpo, chi=None):
+    '''
+    Input:
+        circuit is a list of list of U, i.e.
+        [[U0(t0), U1(t0), U2(t0), ...], [U0(t1), U1(t1), ...], ...]
+        circuit[0] corresponds to layer-0,
+        circuit[1] corresponds to layer-1, and so on.
+
+        mpo: is the operator with [left, phys_up, right, phys_down],
+        which we denote as [l, p, r, q], or [l, u, r, d]
+
+    Goal:
+        We compute the mpo representaion of each layer
+        without truncation.
+        The mpo is in canonical form and treated by standard mps algorithm.
+        We do not make any truncation, that should be fine.
+
+        [ToDo] : add a truncation according to chi?
+
+    return:
+        list of mpo representation of each layer; each in left canonical form
+        mpo_of_layer[0] gives the original mpo \hat{O}
+        mpo_of_layer[1] gives the   U(0) \hat{O}
+    '''
+    depth = len(circuit)
+    L = len(circuit[0]) + 1
+    # A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
+    A_list = [t.copy() for t in mpo]
+
+    mpo_of_layer = []
+    mpo_of_layer.append([A.copy() for A in A_list])
+    # A_list is modified inplace always.
+    # so we always have to copy A tensors.
+    for dep_idx in range(depth):
+        U_list = circuit[dep_idx]
+        ### A_list is modified inplace
+        raise NotImplementedError
+        ## [TODO] the below should be changed
+        right_canonicalize(A_list)
+        A_list, trunc_error = apply_U_all(A_list, U_list, cache=False)
+        mpo_of_layer.append([A.copy() for A in A_list])
+
+    return mpo_of_layer
 
 def var_circuit(target_mps, bottom_mps, circuit, product_state,
                 brickwall=False
@@ -279,28 +323,10 @@ def var_circuit(target_mps, bottom_mps, circuit, product_state,
             ## applying U would remove the U_{ij}^\dagger, and
             ## partial_Tr[ |\phi>, |\psi> ] = Env
 
-            # for t_list in [top_mps, bottom_mps, Lp_cache, Rp_cache]:
-            #     for t in t_list:
-            #         if t is not None:
-            #             if not np.isfinite(t).all():
-            #                 print("check before")
-            #                 import pdb;pdb.set_trace()
-
             if brickwall and (var_dep_idx + idx) % 2 == 1:
                 new_gate = np.eye(4).reshape([2, 2, 2, 2])
             else:
                 new_gate, Lp_cache, Rp_cache = var_gate_w_cache(top_mps, idx, bottom_mps, Lp_cache, Rp_cache)
-
-            # if not np.isfinite(new_gate).all():
-            #     print("new gate wrong")
-            #     import pdb;pdb.set_trace()
-
-            # for t_list in [top_mps, bottom_mps, Lp_cache, Rp_cache]:
-            #     for t in t_list:
-            #         if t is not None:
-            #             if not np.isfinite(t).all():
-            #                 print("check after")
-            #                 import pdb;pdb.set_trace()
 
             circuit[var_dep_idx][idx] = new_gate
 
@@ -626,9 +652,21 @@ def var_gate(new_mps, site, mps_ket):
 
     return new_gate
 
-def apply_gate(A_list, gate, idx, move):
+def apply_gate(A_list, gate, idx, move, no_trunc=False, chi=None, normalized=False):
     '''
-    modification inplace
+    [modification inplace]
+    Goal:
+        Apply gate on the MPS A_list
+    Input:
+        A_list: the list of tensors
+        gate: the gate to apply
+        idx: the gate is applying on (idx, idx+1)
+        move: the direction to combine tensor after SVD
+        no_trunc: if True, then even numerical zeros are not truncated
+        chi: the truncation bond dimension provided.
+
+    Return:
+        trunc_error
     '''
     d1,chi1,chi2 = A_list[idx].shape
     d2,chi2,chi3 = A_list[idx + 1].shape
@@ -638,18 +676,22 @@ def apply_gate(A_list, gate, idx, move):
     theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
 
     X, Y, Z = misc.svd(theta, full_matrices=0)
-    chi2 = np.sum(Y>1e-14)
 
-    # piv = np.zeros(len(Y), onp.bool)
-    # piv[(np.argsort(Y)[::-1])[:chi2]] = True
+    if no_trunc:
+        chi2 = np.size(Y)
+    else:
+        chi2 = np.sum(Y>1e-14)
+        if chi is not None:
+            chi2 = np.amin([chi2, chi])
 
-    # Y = Y[piv]; invsq = np.sqrt(sum(Y**2))
-    # # Y = Y / invsq
-    # X = X[:,piv]
-    # Z = Z[piv,:]
 
     arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
+    trunc_idx = (np.argsort(Y)[::-1])[chi2:]
+    trunc_error = np.sum(Y[trunc_idx] ** 2) / np.sum(Y**2)
     Y = Y[arg_sorted_idx]  # chi2
+    if normalized:
+        Y = Y / np.linalg.norm(Y)
+
     X = X[: ,arg_sorted_idx]  # (d1*chi1, chi2)
     Z = Z[arg_sorted_idx, :]  # (chi2, d2*chi3)
 
@@ -663,13 +705,16 @@ def apply_gate(A_list, gate, idx, move):
     else:
         raise
 
+    ## Sometimes both scipy and numpy seems to breakdown for SVD.
+    ## Should due to the lapack or blas problem on workstation.
+
     # for t in A_list:
     #     try:
     #         assert np.isfinite(t).all()
     #     except:
     #         import pdb;pdb.set_trace()
 
-    return A_list
+    return trunc_error
 
 def overlap(psi1,psi2):
     N = np.ones([1,1]) # a ap
@@ -855,8 +900,6 @@ def get_entanglement(A_list):
     return ent_list
 
 def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
-    #[TODO] Rewrite the function by using apply_gate. Make apply_gate more general
-    # with trunc, chi argument.
     # Make this function as an application of apply_gate only.
     #[TODO] Write also applying gates backward (L-2, L-1), (L-3, L-2), ...?
     '''
@@ -869,7 +912,7 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
         cache: indicate whether the intermediate state should be store.
 
         no_trunc: indicate whether truncation should take place
-        chi: truncate to bond dimension chi, if chi is given.
+        chi: truncate to bond dimension chi, if chi is given. Must make sure no_trunc is True.
     Output:
         if cache is True, we will return a list_A_list,
         which gives the list of mps of length L, which corresponds to
@@ -882,35 +925,11 @@ def apply_U_all(A_list, U_list, cache=False, no_trunc=False, chi=None):
 
     tot_trunc_err = 0.
     for i in range(L-1):
-        d1,chi1,chi2 = A_list[i].shape
-        d2,chi2,chi3 = A_list[i+1].shape
+        trunc_error = apply_gate(A_list, gate, i, move='right', no_trunc=no_trunc,
+                                 chi=chi, normalized=True)
 
-        theta = np.tensordot(A_list[i],A_list[i+1],axes=(2,1))
-        theta = np.tensordot(U_list[i],theta,axes=([0,1],[0,2]))
-        theta = np.reshape(np.transpose(theta,(0,2,1,3)),(d1*chi1, d2*chi3))
-
-        X, Y, Z = misc.svd(theta, full_matrices=0)
-
-        if no_trunc:
-            chi2 = np.size(Y)
-        else:
-            chi2 = np.sum(Y>1e-14)
-
-        if chi is not None:
-            chi2 = np.amin([chi2, chi])
-
-        trunc_idx = (np.argsort(Y)[::-1])[chi2:]
-        trunc_error = np.sum(Y[trunc_idx] ** 2) / np.sum(Y**2)
         tot_trunc_err = tot_trunc_err + trunc_error
-        arg_sorted_idx = (np.argsort(Y)[::-1])[:chi2]
-        Y = Y[arg_sorted_idx]
-        Y = Y / np.linalg.norm(Y)
-        X = X[: ,arg_sorted_idx]
-        Z = Z[arg_sorted_idx, :]
 
-        X=np.reshape(X, (d1, chi1, chi2))
-        A_list[i]   = X.reshape([d1, chi1, chi2])
-        A_list[i+1] = np.dot(np.diag(Y), Z).reshape([chi2, d2, chi3]).transpose([1, 0, 2])
         if cache:
             list_A_list.append([A.copy() for A in A_list])
         else:
