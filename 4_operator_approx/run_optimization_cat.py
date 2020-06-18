@@ -59,7 +59,20 @@ if __name__ == "__main__":
     ################# INITIALIZATION  ######################
     product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
     for dep_idx in range(depth):
+        ## Random initiailization
         my_circuit.append([qTEBD.random_2site_U(2) for i in range(L-1)])
+
+        ## near identity initialization
+        ## This will not work
+        # my_circuit.append([np.eye(4).reshape([2, 2, 2, 2]) + 1e-4 * qTEBD.random_2site_U(2) for i in range(L-1)])
+
+        ## random + identity
+        # if dep_idx == 0:
+        #     my_circuit.append([qTEBD.random_2site_U(2) for i in range(L-1)])
+        # else:
+        #     my_circuit.append([np.eye(4).reshape([2, 2, 2, 2])  for i in range(L-1)])
+
+
         current_depth = dep_idx + 1
 
     mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
@@ -83,8 +96,9 @@ if __name__ == "__main__":
 
         mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
         result_mps = mps_of_layer[-1]
-        print("cat state = ", cat_state)
-        print("our state = ", mps_func.MPS_2_state(result_mps))
+        if L < 6:
+            print("cat state = ", cat_state)
+            print("our state = ", mps_func.MPS_2_state(result_mps))
 
         #################
         #### Measure ####

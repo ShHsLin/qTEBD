@@ -2,9 +2,9 @@ import numpy as np
 import misc
 try:
     import tcl.tcl
-    np.einsum = tcl.tcl.einsum
+    einsum = tcl.tcl.einsum
 except:
-    np.einsum = np.einsum
+    einsum = np.einsum
 
 
 def plrq_2_plr(A_list):
@@ -52,8 +52,8 @@ def MPS_dot_left_env(mps_up, mps_down, site_l, cache_env_list=None):
 
     left_env = np.eye(1)
     for idx in range(0, site_l):
-        left_env = np.einsum('ij,ikl->jkl', left_env, mps_up[idx].conjugate())
-        left_env = np.einsum('ijk,ijl->kl', left_env, mps_down[idx])
+        left_env = einsum('ij,ikl->jkl', left_env, mps_up[idx].conjugate())
+        left_env = einsum('ijk,ijl->kl', left_env, mps_down[idx])
         if not (cache_env_list is None):
             cache_env_list[idx] = left_env
 
@@ -86,9 +86,9 @@ def MPS_dot_right_env(mps_up, mps_down, site_l, cache_env_list=None):
 
     right_env = np.eye(1)
     for idx in range(L - 1, site_l, -1):
-        right_env = np.einsum('kli, ij ->klj', mps_up[idx].conjugate(),
+        right_env = einsum('kli, ij ->klj', mps_up[idx].conjugate(),
                               right_env)
-        right_env = np.einsum('klj,mlj->km', right_env, mps_down[idx])
+        right_env = einsum('klj,mlj->km', right_env, mps_down[idx])
         if not (cache_env_list is None):
             cache_env_list[idx] = right_env
 
@@ -102,10 +102,10 @@ def MPS_dot(mps_1, mps_2):
     <mps_1 | mps_2 >
     '''
     L = len(mps_1)
-    mps_temp = np.einsum('ijk,ijl->kl', mps_1[0].conjugate(), mps_2[0])
+    mps_temp = einsum('ijk,ijl->kl', mps_1[0].conjugate(), mps_2[0])
     for idx in range(1, L):
-        mps_temp = np.einsum('ij,ikl->jkl', mps_temp, mps_1[idx].conjugate())
-        mps_temp = np.einsum('ijk,ijl->kl', mps_temp, mps_2[idx])
+        mps_temp = einsum('ij,ikl->jkl', mps_temp, mps_1[idx].conjugate())
+        mps_temp = einsum('ijk,ijl->kl', mps_temp, mps_2[idx])
 
     return mps_temp[0, 0]
 
@@ -153,8 +153,8 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
         # site = 0
         right_env = cache_env_list[1]
         left_env = np.eye(1)
-        update_tensor = np.einsum('ij,jkl->ikl', left_env, mps_target[0])
-        update_tensor = np.einsum('ikl,ml->ikm', update_tensor, right_env)
+        update_tensor = einsum('ij,jkl->ikl', left_env, mps_target[0])
+        update_tensor = einsum('ikl,ml->ikm', update_tensor, right_env)
         mps_trial[0] = update_tensor
         # svd to shift central site
         l_dim, d, r_dim = mps_trial[0].shape
@@ -163,10 +163,10 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
         rank = s.size
         s /= np.linalg.norm(s)
         mps_trial[0] = U.reshape((l_dim, d, rank))
-        mps_trial[1] = np.einsum('ij,jkl->ikl',
-                                 np.diag(s).dot(Vh), mps_trial[1])
+        mps_trial[1] = einsum('ij,jkl->ikl',
+                              np.diag(s).dot(Vh), mps_trial[1])
         # update env
-        left_env = np.einsum('ijk,ijl->kl', mps_trial[0].conjugate(),
+        left_env = einsum('ijk,ijl->kl', mps_trial[0].conjugate(),
                              mps_target[0])
         cache_env_list[0] = left_env
         cache_env_list[1] = None
@@ -174,9 +174,9 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
         for site in range(1, L - 1):
             right_env = cache_env_list[site + 1]
             left_env = cache_env_list[site - 1]
-            update_tensor = np.einsum('ij,jkl->ikl', left_env,
-                                      mps_target[site])
-            update_tensor = np.einsum('ikl,ml->ikm', update_tensor, right_env)
+            update_tensor = einsum('ij,jkl->ikl', left_env,
+                                   mps_target[site])
+            update_tensor = einsum('ikl,ml->ikm', update_tensor, right_env)
             mps_trial[site] = update_tensor
             # svd to shift central site
             l_dim, d, r_dim = mps_trial[site].shape
@@ -186,21 +186,21 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
             rank = s.size
             s /= np.linalg.norm(s)
             mps_trial[site] = U.reshape((l_dim, d, rank))
-            mps_trial[site + 1] = np.einsum('ij,jkl->ikl',
-                                            np.diag(s).dot(Vh),
-                                            mps_trial[site + 1])
+            mps_trial[site + 1] = einsum('ij,jkl->ikl',
+                                         np.diag(s).dot(Vh),
+                                         mps_trial[site + 1])
             # update env
-            left_env = np.einsum('ij,ikl->jkl', left_env,
-                                 mps_trial[site].conjugate())
-            left_env = np.einsum('ijk,ijl->kl', left_env, mps_target[site])
+            left_env = einsum('ij,ikl->jkl', left_env,
+                              mps_trial[site].conjugate())
+            left_env = einsum('ijk,ijl->kl', left_env, mps_target[site])
             cache_env_list[site] = left_env
             cache_env_list[site + 1] = None
 
         # site = L-1
         right_env = np.eye(1)
         left_env = cache_env_list[L - 2]
-        update_tensor = np.einsum('ij,jkl->ikl', left_env, mps_target[L - 1])
-        update_tensor = np.einsum('ikl,ml->ikm', update_tensor, right_env)
+        update_tensor = einsum('ij,jkl->ikl', left_env, mps_target[L - 1])
+        update_tensor = einsum('ikl,ml->ikm', update_tensor, right_env)
         mps_trial[L - 1] = update_tensor
         # svd to shift central site
         l_dim, d, r_dim = mps_trial[L - 1].shape
@@ -209,23 +209,23 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
         rank = s.size
         s /= np.linalg.norm(s)
         mps_trial[L - 1] = Vh.reshape((rank, d, r_dim))
-        mps_trial[L - 2] = np.einsum('ijk,kl->ijl', mps_trial[L - 2],
-                                     U.dot(np.diag(s)))
+        mps_trial[L - 2] = einsum('ijk,kl->ijl', mps_trial[L - 2],
+                                  U.dot(np.diag(s)))
         # No update for left_env
 
         # site = L-1
         # But update for right_env
-        right_env = np.einsum('ijk,ljk->il', mps_trial[L - 1].conjugate(),
-                              mps_target[L - 1])
+        right_env = einsum('ijk,ljk->il', mps_trial[L - 1].conjugate(),
+                           mps_target[L - 1])
         cache_env_list[L - 1] = right_env
         cache_env_list[L - 2] = None
 
         for site in range(L - 2, 0, -1):
             right_env = cache_env_list[site + 1]
             left_env = cache_env_list[site - 1]
-            update_tensor = np.einsum('ij,jkl->ikl', left_env,
-                                      mps_target[site])
-            update_tensor = np.einsum('ikl,ml->ikm', update_tensor, right_env)
+            update_tensor = einsum('ij,jkl->ikl', left_env,
+                                   mps_target[site])
+            update_tensor = einsum('ikl,ml->ikm', update_tensor, right_env)
             mps_trial[site] = update_tensor
             # svd to shift central site
             l_dim, d, r_dim = mps_trial[site].shape
@@ -235,12 +235,12 @@ def MPS_compression_variational(mps_trial, mps_target, max_iter=30, tol=1e-4,
             rank = s.size
             s /= np.linalg.norm(s)
             mps_trial[site] = Vh.reshape((rank, d, r_dim))
-            mps_trial[site - 1] = np.einsum('ijk,kl->ijl', mps_trial[site - 1],
-                                            U.dot(np.diag(s)))
+            mps_trial[site - 1] = einsum('ijk,kl->ijl', mps_trial[site - 1],
+                                         U.dot(np.diag(s)))
             # update env
-            right_env = np.einsum('kli, ij ->klj', mps_trial[site].conjugate(),
-                                  right_env)
-            right_env = np.einsum('klj,mlj->km', right_env, mps_target[site])
+            right_env = einsum('kli, ij ->klj', mps_trial[site].conjugate(),
+                               right_env)
+            right_env = einsum('klj,mlj->km', right_env, mps_target[site])
             cache_env_list[site] = right_env
             cache_env_list[site - 1] = None
 
@@ -265,7 +265,7 @@ def MPS_2_state(mps):
     '''
     Vec = mps[0][:,0,:]
     for idx in range(1, len(mps)):
-        Vec = np.einsum('pa,qal->pql', Vec, mps[idx])
+        Vec = einsum('pa,qal->pql', Vec, mps[idx])
         dim_p, dim_q, dim_l = Vec.shape
         Vec = Vec.reshape([dim_p * dim_q, dim_l])
 
@@ -306,7 +306,7 @@ def MPO_2_operator(mpo):
     '''
     Op = mpo[0][:, 0, :, :]
     for idx in range(1, len(mpo)):
-        Op = np.einsum('paq,PalQ->pPlqQ', Op, mpo[idx])
+        Op = einsum('paq,PalQ->pPlqQ', Op, mpo[idx])
         dim_p, dim_P, dim_l, dim_q, dim_Q = Op.shape
         Op = Op.reshape([dim_p*dim_P, dim_l, dim_q*dim_Q])
 
