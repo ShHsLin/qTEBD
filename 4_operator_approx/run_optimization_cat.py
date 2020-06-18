@@ -9,6 +9,9 @@ import mps_func
 '''
 Simple example to use the circuit to approximate
 | cat > < all up |
+
+To run the code:
+    python run_optimization_cat.py --L 3 --depth 1 --N_iter 10
 '''
 
 if __name__ == "__main__":
@@ -23,7 +26,6 @@ if __name__ == "__main__":
     N_iter = args.N_iter
 
 
-    save_each = 100
     tol = 1e-12
     cov_crit = tol * 0.1
     max_N_iter = N_iter
@@ -68,7 +70,7 @@ if __name__ == "__main__":
     print("fidelity before optimization : ", fidelity_reached)
 
 
-    stop_crit = 1e-1
+    stop_crit = 1e-4
     for idx in range(0, N_iter):
         #################################
         #### variational optimzation ####
@@ -76,18 +78,19 @@ if __name__ == "__main__":
         mpo_of_last_layer, my_circuit = qTEBD.var_circuit_mpo(target_mpo,
                                                               my_circuit,)
 
-        density_mat = np.einsum('pabq,PbcQ,tcdr->pPtqQr', mpo_of_last_layer[0], mpo_of_last_layer[1], mpo_of_last_layer[2]).reshape([8, 8])
+        # mpo_of_last_layer would be the mpo representation of the density matrix
+        density_mat = mps_func.MPO_2_operator(mpo_of_last_layer)
 
-        our_mps, trunc_err = qTEBD.apply_U_all(product_state, my_circuit[0])
-        print("trunc_err = ", trunc_err)
+        mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
+        result_mps = mps_of_layer[-1]
         print("cat state = ", cat_state)
-        print("our state = ", mps_func.MPS_2_state(our_mps))
+        print("our state = ", mps_func.MPS_2_state(result_mps))
 
         #################
         #### Measure ####
         #################
 
-        fidelity_reached = np.abs(qTEBD.overlap(target_mps, our_mps))**2
+        fidelity_reached = np.abs(qTEBD.overlap(target_mps, result_mps))**2
 
         print("fidelity reached : ", fidelity_reached)
         error_list.append(1. - fidelity_reached)
@@ -96,7 +99,7 @@ if __name__ == "__main__":
         ################
         ## Forcing to stop if already converge
         ################
-        if (fidelity_reached > 1 - 1e-12 or np.abs((error_list[-1] - error_list[-2])/error_list[-1]) < 1e-4) and idx > save_each:
+        if (fidelity_reached > 1 - 1e-12 or np.abs((error_list[-1] - error_list[-2])/error_list[-1]) < stop_crit):
             break
 
     num_data = len(error_list)

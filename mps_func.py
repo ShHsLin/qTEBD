@@ -1,5 +1,11 @@
 import numpy as np
 import misc
+try:
+    import tcl.tcl
+    np.einsum = tcl.tcl.einsum
+except:
+    np.einsum = np.einsum
+
 
 def plrq_2_plr(A_list):
     new_A_list = []
