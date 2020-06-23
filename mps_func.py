@@ -312,3 +312,38 @@ def MPO_2_operator(mpo):
 
     assert Op.shape[1] == 1
     return Op[:,0,:]
+
+def operator_2_MPO(op, L, chimax):
+    '''
+    Input:
+        op: the operator in matrix of size (2**L, 2**L)
+        L: system size
+        chimax: the maximum bond dimension
+    Return:
+        MPO in [p, l, r, q] form
+    '''
+    op_aR = np.reshape(op, (1, 2**L, 2**L))
+    Ms = []
+    for n in range(1, L+1):
+        chi_n, dim_R1, dim_R2 = op_aR.shape
+        assert dim_R1 == 2**(L-(n-1))
+        op_LR = np.reshape(op_aR, [chi_n*2, dim_R1//2, 2, dim_R2//2])
+        op_LR = np.transpose(op_LR, [0, 2, 1, 3]).reshape([chi_n*4, (dim_R1//2) * (dim_R2//2)])
+        M_n, lambda_n, op_tilde = misc.svd(op_LR, full_matrices=False)
+        if len(lambda_n) > chimax:
+            keep = np.argsort(lambda_n)[::-1][:chimax]
+            M_n = M_n[:, keep]
+            lambda_n = lambda_n[keep]
+            op_tilde = op_tilde[keep, :]
+
+        chi_np1 = len(lambda_n)
+        M_n = np.reshape(M_n, (chi_n, 2, 2, chi_np1))
+        Ms.append(M_n.transpose([1, 0, 3, 2]))
+        op_aR = lambda_n[:, np.newaxis] * op_tilde[:,:]
+        op_aR = op_aR.reshape([chi_np1, (dim_R1//2), (dim_R2//2)])
+
+    assert op_aR.shape == (1, 1, 1)
+    Ms[-1] = Ms[-1] * op_aR[0, 0, 0]
+    return Ms
+
+
