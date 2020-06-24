@@ -29,6 +29,9 @@ if __name__ == "__main__":
     depth = args.depth
     N_iter = args.N_iter
     T = args.T
+    brickwall = bool(args.brickwall)
+    print("Running with system size L=%d, circuit depth: %d, N_iter: %d" % (L, depth, N_iter))
+    print("Is current code using brickwall ? ", brickwall)
 
 
     tol = 1e-12
@@ -82,9 +85,22 @@ if __name__ == "__main__":
 
     ################# INITIALIZATION  ######################
     product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
-    for dep_idx in range(depth):
-        my_circuit.append([qTEBD.random_2site_U(2) for i in range(L-1)])
-        current_depth = dep_idx + 1
+    if brickwall:
+        for dep_idx in range(depth):
+            random_layer = []
+            for idx in range(L-1):
+                if (idx + dep_idx) % 2 == 0:
+                    random_layer.append(qTEBD.random_2site_U(2))
+                else:
+                    random_layer.append(np.eye(4).reshape([2,2,2,2]))
+
+            my_circuit.append(random_layer)
+            current_depth = dep_idx + 1
+
+    else:  # not brickwall
+        for dep_idx in range(depth):
+            my_circuit.append([qTEBD.random_2site_U(2) for i in range(L-1)])
+            current_depth = dep_idx + 1
 
 
     result_mpo_list = qTEBD.circuit_2_mpo(my_circuit, mpo_base)
@@ -103,7 +119,9 @@ if __name__ == "__main__":
         #### variational optimzation ####
         #################################
         mpo_of_last_layer, my_circuit = qTEBD.var_circuit_mpo(target_mpo,
-                                                              my_circuit,)
+                                                              my_circuit,
+                                                              brickwall=brickwall
+                                                             )
 
         #################
         #### Measure ####

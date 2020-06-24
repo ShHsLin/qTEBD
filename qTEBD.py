@@ -25,7 +25,7 @@ try:
 except:
     import numpy as np
     np.seterr(all='raise')
-    print("some function may be broken")
+    # print("some function may be broken")
 
 import numpy as onp
 

@@ -1,6 +1,16 @@
 import argparse
 import sys
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 
 def parse_args():
     """
@@ -43,6 +53,13 @@ def parse_args():
                         help='the time T. Setting for target states or ending time evolution'
                         'Default: 0.',
                         default=0., type=float)
+    parser.add_argument('--brickwall', dest='brickwall',
+                        help='Whether or not using brickwall'
+                        'type in 1 for true, 0 for false'
+                        'Default: False',
+                        default=0, type=int,
+                       )
+
 
 
     if len(sys.argv) == 1:
