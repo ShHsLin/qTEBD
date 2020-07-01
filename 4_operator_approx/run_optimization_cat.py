@@ -103,6 +103,15 @@ if __name__ == "__main__":
         #################
         #### Measure ####
         #################
+        target_op = mps_func.MPO_2_operator(target_mpo)
+        op1 = target_op.T.conj()
+        mpo_list = qTEBD.circuit_2_mpo(my_circuit, [np.eye(2).reshape([2, 1, 1, 2]) for i in range(L)])
+        op2 = mps_func.MPO_2_operator(mpo_list[-1])
+
+        print("the operator norm difference: ", np.linalg.norm(op1-op2, ord='fro')**2)
+        # print(" my check about trace norm : ", np.trace(op1.T.conj().dot(op1) - op1.T.conj().dot(op2) +
+        #                                                 op2.T.conj().dot(op2) - op2.T.conj().dot(op1)) )
+
 
         fidelity_reached = np.abs(qTEBD.overlap(target_mps, result_mps))**2
 

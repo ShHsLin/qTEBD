@@ -383,7 +383,7 @@ def var_circuit_mpo(target_mpo, circuit,
         circuit: list of list of unitary
         breakwall: whether using breakwall type of circuit
     Output:
-        mpo_final: the mps representation of the updated circuit
+        mpo_final: the mpo representation of the updated circuit
         circuit: list of list of unitary
 
 
@@ -1104,7 +1104,9 @@ def right_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
         new_A = np.tensordot(A_list[i-1], R, axes=([2], [0]))  #[p, 1l, (1r)] [(2l), 2r]
         A_list[i-1] = new_A
 
-    A_list[0] = A_list[0] / np.linalg.norm(A_list[0])
+    if normalized:
+        A_list[0] = A_list[0] / np.linalg.norm(A_list[0])
+
     return A_list, tot_trunc_err
 
 def left_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
@@ -1146,7 +1148,9 @@ def left_canonicalize(A_list, no_trunc=False, chi=None, normalized=True):
         new_A = np.tensordot(R, A_list[i+1], axes=([1], [1]))  #[1l,(1r)],[p, (2l), 2r]
         A_list[i+1] = np.transpose(new_A, [1, 0, 2])
 
-    A_list[-1] = A_list[-1] / np.linalg.norm(A_list[-1])
+    if normalized:
+        A_list[-1] = A_list[-1] / np.linalg.norm(A_list[-1])
+
     return A_list, tot_trunc_err
 
 def get_entanglement(A_list):
