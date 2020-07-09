@@ -14,7 +14,7 @@ if __name__ == "__main__":
     g = float(sys.argv[2])
     J = 1.
 
-    H = 'XXZ'  # XXZ
+    H = 'TFI'  # XXZ
 
     if H == 'TFI':
         dir_path = 'data/1d_TFI_g%.1f/' % (g)

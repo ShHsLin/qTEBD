@@ -37,6 +37,10 @@ def parse_args():
                         'Default: 1.',
                         default=1., type=float)
 
+    parser.add_argument('--chi', dest='chi',
+                        help='bond dimension of the mps'
+                        'Default: 2',
+                        default=2, type=int)
     parser.add_argument('--depth', dest='depth',
                         help='depth of the circuit'
                         'Default: 2',

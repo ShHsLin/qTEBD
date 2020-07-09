@@ -12,14 +12,99 @@ from tenpy.models.tf_ising import TFIChain
 from tenpy.models.spins import SpinModel
 from tenpy.algorithms import dmrg
 
-import misc, os, sys
+import os, sys
+sys.path.append('..')
+import misc
+import parse_args
 
 
-def example_DMRG_tf_ising_finite(L, g, chi, verbose=True):
+
+from tenpy.models.model import CouplingMPOModel, NearestNeighborModel
+from tenpy.tools.params import get_parameter
+from tenpy.networks.site import SpinHalfSite
+import mps_func
+
+
+class IsingModel(CouplingMPOModel):
+    r"""General Ising model on a general lattice.
+
+    The Hamiltonian reads:
+
+    .. math ::
+        H = - \sum_{\langle i,j\rangle, i < j} \mathtt{J} \sigma^x_i \sigma^x_{j}
+            - \sum_{i} \mathtt{g} \sigma^z_i
+
+    Here, :math:`\langle i,j \rangle, i< j` denotes nearest neighbor pairs, each pair appearing
+    exactly once.
+    All parameters are collected in a single dictionary `model_params`, which
+    is turned into a :class:`~tenpy.tools.params.Config` object.
+
+    Parameters
+    ----------
+    model_params : :class:`~tenpy.tools.params.Config`
+        Parameters for the model. See :cfg:config:`TFIModel` below.
+
+    Options
+    -------
+    .. cfg:config :: TFIModel
+        :include: CouplingMPOModel
+
+        conserve : None | 'parity'
+            What should be conserved. See :class:`~tenpy.networks.Site.SpinHalfSite`.
+        J, g : float | array
+            Coupling as defined for the Hamiltonian above.
+
+    """
+    def __init__(self, model_params):
+        CouplingMPOModel.__init__(self, model_params)
+
+    def init_sites(self, model_params):
+        # conserve = get_parameter(model_params, 'conserve', 'parity', self.name)
+        # assert conserve != 'Sz'
+        # if conserve == 'best':
+        #     conserve = 'parity'
+        #     if self.verbose >= 1.:
+        #         print(self.name + ": set conserve to", conserve)
+        site = SpinHalfSite(conserve=None)
+        return site
+
+    def init_terms(self, model_params):
+        J = get_parameter(model_params, 'J', 1., self.name, True)
+        g = get_parameter(model_params, 'g', 1., self.name, True)
+        h = get_parameter(model_params, 'h', 1., self.name, True)
+        for u in range(len(self.lat.unit_cell)):
+            self.add_onsite(-g, u, 'Sigmaz')
+            self.add_onsite(-h, u, 'Sigmax')
+
+        for u1, u2, dx in self.lat.nearest_neighbors:
+            self.add_coupling(-J, u1, 'Sigmax', u2, 'Sigmax', dx)
+        # done
+
+
+class IsingChain(IsingModel, NearestNeighborModel):
+    """The :class:`TFIModel` on a Chain, suitable for TEBD.
+
+    See the :class:`TFIModel` for the documentation of parameters.
+    """
+    def __init__(self, model_params):
+        model_params.setdefault('lattice', "Chain")
+        CouplingMPOModel.__init__(self, model_params)
+
+
+
+
+
+
+
+def example_DMRG_tf_ising_finite(L, g, h=0, chi=2, verbose=True):
     print("finite DMRG, transverse field Ising model")
-    print("L={L:d}, g={g:.2f}".format(L=L, g=g))
-    model_params = dict(L=L, J=1., g=g, bc_MPS='finite', conserve=None, verbose=verbose)
-    M = TFIChain(model_params)
+    print("L={L:d}, g={g:.2f}, h={h:.2f}".format(L=L, g=g, h=h))
+    model_params = dict(L=L, J=1., g=g, bc_MPS='finite', h=h)
+    M = IsingChain(model_params)
+
+    # model_params = dict(L=L, J=1., g=g, bc_MPS='finite', conserve=None, verbose=verbose)
+    # M = TFIChain(model_params)
+
     product_state = ["up"] * M.lat.N_sites
     psi = MPS.from_product_state(M.lat.mps_sites(), product_state, bc=M.lat.bc_MPS)
     dmrg_params = {
@@ -153,14 +238,17 @@ def example_DMRG_heisenberg_xxz_infinite(Jz, conserve='best', verbose=True):
 
 
 if __name__ == "__main__":
-    L = int(sys.argv[1])
-    g = float(sys.argv[2])
-    chi = int(sys.argv[3])
-    Hamiltonian = str(sys.argv[4])
+    args = parse_args.parse_args()
+
+    L = args.L
+    Hamiltonian = args.H
+    g = args.g
+    h = args.h
+    chi = args.chi
     assert Hamiltonian in ['TFI', 'XXZ']
 
     if Hamiltonian == 'TFI':
-        dmrg_E, psi, M = example_DMRG_tf_ising_finite(L=L, g=g, chi=chi)
+        dmrg_E, psi, M = example_DMRG_tf_ising_finite(L=L, g=g, h=h, chi=chi)
     else:
         dmrg_E, psi, M = example_DMRG_heisenberg_xxz_finite(L=L, Jz=g, chi=chi)
 
@@ -169,7 +257,7 @@ if __name__ == "__main__":
     # print("-" * 100)
     # example_DMRG_heisenberg_xxz_infinite(Jz=1.5)
 
-    dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
+    dir_path = 'data/1d_%s_g%.1f_h%.1f/' % (Hamiltonian, g, h)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
