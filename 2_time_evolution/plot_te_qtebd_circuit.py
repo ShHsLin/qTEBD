@@ -3,7 +3,6 @@ import numpy as np
 import sys, os
 sys.path.append('..')
 import misc
-import setup
 import seaborn as sns
 color_set = [sns.color_palette("GnBu_d"),
              sns.color_palette("Blues"),
@@ -13,6 +12,7 @@ color_set = [sns.color_palette("GnBu_d"),
 
 markersize = 4.
 linewidth = 1
+import setup
 
 
 if __name__ == '__main__':
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
 
     final_time = []
-    for depth in range(1,6):
+    for depth in range(1,5):
         final_time.append([])
         for idx, N_iter in enumerate([100000]):
             if N_iter < 100:
@@ -121,7 +121,7 @@ if __name__ == '__main__':
                 axes_idx = 1
                 if final :
                     axes2.semilogy(t_list, accum_error,'-', color=color, label='$M=%d$' % (depth))
-                    axes2.set_ylabel(u'$1 - \prod\mathcal{E}$')
+                    axes2.set_ylabel(u'$1 - \prod {f}_i$')
                 else:
                     # axes_list[axes_idx].semilogy(t_list, update_error_list,'.', color=color, label='$depth=%d, Niter=%d$' % (depth, N_iter))
                     # axes_list[axes_idx].set_ylabel('$1 - \mathcal{E}$')
@@ -195,19 +195,22 @@ if __name__ == '__main__':
     axes_list[0].set_ylabel('$\\langle \sigma_z^{L/2} \\rangle $')
     axes_list[0].set_zorder(100)
     if final:
-        axes_list[0].legend(fontsize=7.5, ncol=3, framealpha=1., loc='lower left', bbox_to_anchor=(0., 0.)) #-0.45))
+        # axes_list[0].legend(fontsize=7.5, ncol=3, framealpha=1., loc='lower left', bbox_to_anchor=(0., 0.)) #-0.45))
+        axes_list[0].legend(fontsize=7.5, ncol=1, framealpha=1., loc='lower left', bbox_to_anchor=(0., -0.42)) #-0.45))
+        axes2.legend(fontsize=7.5, ncol=2, framealpha=1., loc='lower left', bbox_to_anchor=(0.3, 0.)) #-0.45))
     else:
         axes_list[0].legend(fontsize=8, ncol=3, framealpha=1., loc='lower left', bbox_to_anchor=(0.65, -1.05))
 
-    axes_list[0].set_xlim([0,3.])
+    axes_list[0].set_xlim([0,4.])
+    axes2.set_xlim([0, 4.])
 
     if not final:
         fig.subplots_adjust(left=0.2, top=0.95, bottom=0.1, right=0.93)
     else:
-        fig.subplots_adjust(left=0.2, top=0.95, bottom=0.15, right=0.93)
+        fig.subplots_adjust(left=0.18, top=0.96, bottom=0.13, right=0.95)
 
         axes2.axhline(y=1e-3, color='grey', linewidth=0.5, linestyle='--')
-        fig2.subplots_adjust(left=0.2, bottom=0.23, top=0.95, right=0.95)
+        fig2.subplots_adjust(left=0.20, bottom=0.25, top=0.95, right=0.95)
         axes2.set_ylim([1e-8, 1e-1])
         axes2.set_xlabel('$Jt$')
 

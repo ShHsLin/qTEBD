@@ -36,6 +36,42 @@ def svd(theta, compute_uv=True, full_matrices=True):
                                 full_matrices=full_matrices,
                                 lapack_driver='gesvd')
 
+def save_circuit_simple(dir_path, circuit, data_dict):
+    '''
+    Goal:
+        new version of saving circuit.
+        circuit depth, circuit type, the optimization proceduce
+        should be include in dir_path.
+
+        all data are now combined in data_dict to avoid cluttering.
+
+    Input:
+        dir_path
+        circuit
+        data_dict
+    '''
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    filename = 'circuit.pkl'
+    path = dir_path + filename
+    pickle.dump(circuit, open(path, 'wb'))
+
+    filename = 'data_dict.pkl'
+    path = dir_path + filename
+    pickle.dump(data_dict, open(path, 'wb'))
+    return
+
+def load_circuit_simple(dir_path):
+    filename = 'circuit.pkl'
+    path = dir_path + filename
+    circuit = pickle.load(open(path, 'rb'))
+
+    filename = 'data_dict.pkl'
+    path = dir_path + filename
+    data_dict = pickle.load(open(path, 'rb'))
+    return circuit, data_dict
+
 
 def save_circuit(dir_path, depth, N_iter, order,
                  circuit, E_list, t_list, update_error_list,

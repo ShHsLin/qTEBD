@@ -11,6 +11,12 @@ Running the brickwall circuit
 python run_gs_qtebd_brickwall.py --L 10 --H TFI --g 1. --h 0. --depth 4 --N_iter 1 --order 2nd
 ```
 
+
+Running dmrg
+```
+python run_gs_dmrg.py --L 31 --H TFI --chi 2 --g 1.2 --h 0.1
+```
+
 For more parameters option, see the file parse_args.py 
 
 
