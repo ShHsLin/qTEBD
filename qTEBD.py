@@ -30,18 +30,22 @@ except:
 import numpy as onp
 
 
-def get_H(Hamiltonian, L, J, g, h=0):
+def get_H(Hamiltonian, L, J, g, h=0, change_basis=False):
     if Hamiltonian == 'TFI':
-        return get_H_TFI(L, J, g, h)
+        return get_H_TFI(L, J, g, h, change_basis=change_basis)
     elif Hamiltonian == 'XXZ':
         return get_H_XXZ(L, J, g)
     else:
         raise
 
-def get_H_TFI(L, J, g, h=0):
+def get_H_TFI(L, J, g, h=0, change_basis=False):
     '''
-    H_TFI = - J ZZ - g X
-    H_TFI = - J XX - g Z - h X
+    Originally we have:
+        H_TFI = - J XX - g Z - h X
+
+    if change_basis:
+        H_TFI = - J ZZ + g X + h Z
+
     Return:
         H: list of local hamiltonian
     '''
@@ -50,11 +54,16 @@ def get_H_TFI(L, J, g, h=0):
     eye2 = np.eye(2)
     d = 2
 
-    def hamiltonian(gl, gr, hl, hr, J):
-        # return (-np.kron(sz, sz) * J - gr * np.kron(eye2, sx) - gl * np.kron(sx, eye2)).reshape([d] * 4)
-        return (-np.kron(sx, sx) * J - gr * np.kron(eye2, sz) - gl * np.kron(sz, eye2)
-                -hr * np.kron(eye2, sx) - hl * np.kron(sx, eye2)
-               ).reshape([d] * 4)
+    if not change_basis:
+        def hamiltonian(gl, gr, hl, hr, J):
+            return (-np.kron(sx, sx) * J - gr * np.kron(eye2, sz) - gl * np.kron(sz, eye2)
+                    -hr * np.kron(eye2, sx) - hl * np.kron(sx, eye2)
+                   ).reshape([d] * 4)
+    else:
+        def hamiltonian(gl, gr, hl, hr, J):
+            return (-np.kron(sz, sz) * J + gr * np.kron(eye2, sx) + gl * np.kron(sx, eye2)
+                    +hr * np.kron(eye2, sz) + hl * np.kron(sz, eye2)
+                   ).reshape([d] * 4)
 
     H = []
     for j in range(L - 1):
@@ -996,13 +1005,20 @@ def apply_gate_mpo(A_list, gate, idx, pos, move, no_trunc=False, chi=None, norma
 
     return trunc_error
 
-def overlap(psi1,psi2):
+def overlap(psi1, psi2):
+    '''
+    psi1 is not taken complex conjugate beforehand.
+    psi1 : with dimension [p, l, r]
+    psi2 : with dimension [p, l, r]
+    '''
     N = np.ones([1,1]) # a ap
     L = len(psi1)
     for i in np.arange(L):
-        N = np.tensordot(N,np.conj(psi1[i]), axes=(1,1)) # a ap 
-        N = np.tensordot(N,psi2[i], axes=([0,1],[1,0])) # ap a
+        N = np.tensordot(N, np.conj(psi1[i]), axes=(1,1))  # a (ap), p (lp) rp -> a, p, rp
+        N = np.tensordot(N,psi2[i], axes=([0,1],[1,0])) # (a) (p) rp, (p) (l) r -> rp r
         N = np.transpose(N, [1,0])
+
+    assert N.size == 1
     N = np.trace(N)
     return(N)
 

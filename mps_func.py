@@ -1,6 +1,7 @@
 import numpy as np
 import misc
 try:
+    raise
     import tcl.tcl
     einsum = tcl.tcl.einsum
 except:
@@ -47,10 +48,13 @@ def MPS_dot_left_env(mps_up, mps_down, site_l, cache_env_list=None):
     |-----------------  -----
     0,...,(site_l-1)
     '''
-    if site_l == 0:
-        return np.eye(1)
+    dtype = mps_up[0].dtype
+    assert dtype == mps_down[0].dtype
 
-    left_env = np.eye(1)
+    if site_l == 0:
+        return np.eye(1, dtype=dtype)
+
+    left_env = np.eye(1, dtype=dtype)
     for idx in range(0, site_l):
         left_env = einsum('ij,ikl->jkl', left_env, mps_up[idx].conjugate())
         left_env = einsum('ijk,ijl->kl', left_env, mps_down[idx])
@@ -81,10 +85,12 @@ def MPS_dot_right_env(mps_up, mps_down, site_l, cache_env_list=None):
                     (site_l+1),...,L-1
     '''
     L = len(mps_up)
+    dtype = mps_up[0].dtype
+    assert dtype == mps_down[0].dtype
     if site_l == L - 1:
-        return np.eye(1)
+        return np.eye(1, dtype=dtype)
 
-    right_env = np.eye(1)
+    right_env = np.eye(1, dtype=dtype)
     for idx in range(L - 1, site_l, -1):
         right_env = einsum('kli, ij ->klj', mps_up[idx].conjugate(),
                               right_env)

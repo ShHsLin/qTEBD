@@ -73,11 +73,13 @@ def gen_hamiltonian(sx_list, sy_list, sz_list, L):
 
     return H_xx, H_yy, H_zz, H_x, H_y, H_z
 
-def get_H_Ising(g, h, J, L):
+def get_H_Ising(g, h, J, L, change_basis=False):
     sx_list, sy_list, sz_list  = gen_spin_operators(L)
     H_xx, H_yy, H_zz, H_x, H_y, H_z = gen_hamiltonian(sx_list, sy_list, sz_list, L)
     H = -J*H_xx - g*H_z - h*H_x
-    # H = J*H_zz + g*H_x + h*H_z
+    if change_basis:
+        H = -J*H_zz + g*H_x + h*H_z
+
     return H
 
 def get_H_XXZ(g, J, L):

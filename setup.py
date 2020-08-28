@@ -13,22 +13,22 @@ from matplotlib import ticker ## to control the number of tick in plot
 from matplotlib.ticker import LinearLocator
 from matplotlib.ticker import FormatStrFormatter
 
-x=26
-params = {'legend.fontsize':36-x,#'xx-large',
-                    # 'figure.figsize': (15,6),
-                    'axes.labelsize': 36-x,
-                    'axes.titlesize': 36-x,
-                    'xtick.labelsize': 36-x,#'xx-large',
-                    'ytick.labelsize': 36-x,#'xx-large',
-                    'figure.autolayout':  False, #True,
-                    'mathtext.fontset': u'cm',
-                    'font.family': u'serif',
-                    'font.serif': u'Times New Roman',
-                    'pgf.texsystem':'pdflatex',
-                    'text.usetex': True,
-                    # 'text.latex.unicode': False,
-                    # 'text.dvipnghack' : True
-                   }
+def setup(fontsize):
+    params = {'legend.fontsize':fontsize,#'xx-large',
+                        # 'figure.figsize': (15,6),
+                        'axes.labelsize': fontsize,
+                        'axes.titlesize': fontsize,
+                        'xtick.labelsize': fontsize,#'xx-large',
+                        'ytick.labelsize': fontsize,#'xx-large',
+                        'figure.autolayout':  False, #True,
+                        'mathtext.fontset': u'cm',
+                        'font.family': u'serif',
+                        'font.serif': u'Times New Roman',
+                        'pgf.texsystem':'pdflatex',
+                        'text.usetex': True,
+                        # 'text.latex.unicode': False,
+                        # 'text.dvipnghack' : True
+                       }
 
-pylab.rcParams.update(params)
+    pylab.rcParams.update(params)
 
