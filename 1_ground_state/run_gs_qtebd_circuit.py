@@ -70,7 +70,7 @@ if __name__ == "__main__":
     for dt in [0.05,0.01,0.001]:
         U_list =  qTEBD.make_U(H_list, dt)
         U_half_list =  qTEBD.make_U(H_list, dt/2.)
-        for i in range(int(40//dt**(0.75))):
+        for i in range(int(60//dt**(0.75))):
             mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
             # [TODO] remove the assertion below
