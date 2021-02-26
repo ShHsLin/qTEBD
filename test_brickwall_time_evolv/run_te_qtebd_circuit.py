@@ -129,8 +129,10 @@ if __name__ == "__main__":
         ###################################
         #### DO one full iteration here  ##
         ###################################
-        mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
-                                                          my_circuit, product_state)
+        mps_of_last_layer, my_circuit = qTEBD.var_circuit2(target_mps, product_state,
+                                                           my_circuit, brickwall=True)
+        # mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+        #                                                   my_circuit, product_state)
         overlap = mps_func.overlap(mps_of_last_layer, target_mps)
         F = np.abs(overlap) ** 2 / target_mps_norm_sq
         ###################################
@@ -139,14 +141,17 @@ if __name__ == "__main__":
         F_diff = 1
         while (num_iter < max_N_iter and 1-F > tol and F_diff > cov_crit):
             num_iter = num_iter + 1
-            mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
-                                                              my_circuit, product_state)
+            mps_of_last_layer, my_circuit = qTEBD.var_circuit2(target_mps, product_state,
+                                                               my_circuit, brickwall=True)
+            # mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+            #                                                   my_circuit, product_state)
             overlap = mps_func.overlap(mps_of_last_layer, target_mps)
             # overlap
             new_F = np.abs(overlap) ** 2 / target_mps_norm_sq
             F_diff = np.abs(new_F - F)
             F = new_F
-            print(" at iter = ", num_iter, " F = ", F)
+            if num_iter % 100 == 0:
+                print(" at iter = ", num_iter, " F = ", F)
 
         assert np.isclose(mps_func.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
         current_energy = np.sum(mps_func.expectation_values(mps_of_last_layer, H_list))

@@ -78,7 +78,7 @@ if __name__ == "__main__":
     mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
     mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
 
-    fidelity_reached = np.abs(qTEBD.overlap(target_mps, mps_of_last_layer))**2
+    fidelity_reached = np.abs(mps_func.overlap(target_mps, mps_of_last_layer))**2
     error_list.append(1. - fidelity_reached)
     print("fidelity before optimization : ", fidelity_reached)
 
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         #                                                 op2.T.conj().dot(op2) - op2.T.conj().dot(op1)) )
 
 
-        fidelity_reached = np.abs(qTEBD.overlap(target_mps, result_mps))**2
+        fidelity_reached = np.abs(mps_func.overlap(target_mps, result_mps))**2
 
         print("fidelity reached : ", fidelity_reached)
         error_list.append(1. - fidelity_reached)

@@ -4,7 +4,7 @@ from scipy.linalg import expm
 import sys
 sys.path.append('..')
 import misc, os
-import qTEBD
+import qTEBD, mps_func
 try:
     import autograd.numpy as np
     from autograd import grad
@@ -30,7 +30,7 @@ def expm_eigh(t, h):
     return np.matmul(p *d, p_dagger)
 
 def H_expectation_value(A_list, H_list):
-    return np.real(np.sum(qTEBD.expectation_values(A_list, H_list)))
+    return np.real(np.sum(mps_func.expectation_values(A_list, H_list)))
 
 if __name__ == "__main__":
     np.random.seed(1)
@@ -48,10 +48,10 @@ if __name__ == "__main__":
     J = 1.
     N_iter = 1
 
-    A_list  =  qTEBD.init_mps(L,chi,2)
+    A_list  =  mps_func.init_mps(L,chi,2)
     H_list  =  qTEBD.get_H(Hamiltonian, L, J, g)
     t_list = [0]
-    E_list = [np.sum(qTEBD.expectation_values(A_list, H_list))]
+    E_list = [np.sum(mps_func.expectation_values(A_list, H_list))]
     update_error_list = [0.]
     for dt in [0.05,0.01,0.001]:
         U_list =  qTEBD.make_U(H_list, dt)
@@ -66,13 +66,13 @@ if __name__ == "__main__":
                 Ap_list = qTEBD.apply_U(Ap_list, U_list, 1)
 
             # Ap_list = e^(-H) | A_list >
-            print("Norm new mps = ", qTEBD.overlap(Ap_list, Ap_list), "new state aimed E = ",
-                  np.sum(qTEBD.expectation_values(Ap_list, H_list, check_norm=False))/qTEBD.overlap(Ap_list, Ap_list)
+            print("Norm new mps = ", mps_func.overlap(Ap_list, Ap_list), "new state aimed E = ",
+                  np.sum(mps_func.expectation_values(Ap_list, H_list, check_norm=False))/mps_func.overlap(Ap_list, Ap_list)
                  )
 
             ## Gradient opt
             # for k in range(100):
-            #     grad_A_list = grad(qTEBD.overlap, 1)(Ap_list, A_list)
+            #     grad_A_list = grad(mps_func.overlap, 1)(Ap_list, A_list)
             #     for idx_2 in range(L):
             #         d, chi1, chi2 = A_list[idx_2].shape
             #         U = A_list[idx_2].reshape([d * chi1, chi2])
@@ -116,10 +116,10 @@ if __name__ == "__main__":
 
 
 
-            fidelity_reached = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / qTEBD.overlap(Ap_list, Ap_list)
+            fidelity_reached = np.abs(mps_func.overlap(Ap_list, A_list))**2 / mps_func.overlap(Ap_list, Ap_list)
             print("fidelity reached : ", fidelity_reached)
             update_error_list.append(1. - fidelity_reached)
-            current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
+            current_energy = np.sum(mps_func.expectation_values(A_list, H_list))
             E_list.append(current_energy)
             t_list.append(t_list[-1]+dt)
 

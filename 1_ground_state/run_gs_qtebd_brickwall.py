@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
     mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
-    E_list.append(np.sum(qTEBD.expectation_values(mps_of_layer[-1], H_list)))
+    E_list.append(np.sum(mps_func.expectation_values(mps_of_layer[-1], H_list)))
 
     for dt in [0.05,0.01,0.001]:
         U_list =  qTEBD.make_U(H_list, dt)
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
             # [TODO] remove the assertion below
-            assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+            assert np.isclose(mps_func.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
             if order == '2nd':
                 new_mps = qTEBD.apply_U(mps_of_last_layer,  U_half_list, 0)
                 new_mps = qTEBD.apply_U(new_mps, U_list, 1)
@@ -82,8 +82,8 @@ if __name__ == "__main__":
                 new_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
                 new_mps = qTEBD.apply_U(new_mps, U_list, 1)
 
-            print("Norm new mps = ", qTEBD.overlap(new_mps, new_mps), "new state aimed E = ",
-                  np.sum(qTEBD.expectation_values(new_mps, H_list, check_norm=False))/qTEBD.overlap(new_mps, new_mps)
+            print("Norm new mps = ", mps_func.overlap(new_mps, new_mps), "new state aimed E = ",
+                  np.sum(mps_func.expectation_values(new_mps, H_list, check_norm=False))/mps_func.overlap(new_mps, new_mps)
                  )
             # new_mps is the e(-H)|psi0> which is not normalizaed.
 
@@ -93,14 +93,14 @@ if __name__ == "__main__":
             # [Todo] log the fedility here
             mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
-            assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-            current_energy = np.sum(qTEBD.expectation_values(mps_of_last_layer, H_list))
+            assert np.isclose(mps_func.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+            current_energy = np.sum(mps_func.expectation_values(mps_of_last_layer, H_list))
             E_list.append(current_energy)
             t_list.append(t_list[-1]+dt)
 
             print(t_list[-1], E_list[-1])
 
-            fidelity_reached = np.abs(qTEBD.overlap(new_mps, mps_of_last_layer))**2 / qTEBD.overlap(new_mps, new_mps)
+            fidelity_reached = np.abs(mps_func.overlap(new_mps, mps_of_last_layer))**2 / mps_func.overlap(new_mps, new_mps)
             print("fidelity reached : ", fidelity_reached)
             update_error_list.append(1. - fidelity_reached)
 

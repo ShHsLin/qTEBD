@@ -42,7 +42,7 @@ if __name__ == "__main__":
     ## [TODO] add check whether data already
 
     J = 1.
-    dt = 0.01
+    dt = 0.001
     save_each = int(0.5 / dt)
     total_t = 50
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     U_list =  qTEBD.make_U(H_list, 1j * dt)
     U_half_list =  qTEBD.make_U(H_list, 0.5j * dt)
 
-    wf_dir_path = 'data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi%d_%s/' % (Hamiltonian, g, h, L, chi, order)
+    wf_dir_path = 'data_tebd_dt%e/1d_%s_g%.4f_h%.4f/L%d/wf_chi%d_%s/' % (dt, Hamiltonian, g, h, L, chi, order)
     if not os.path.exists(wf_dir_path):
         os.makedirs(wf_dir_path)
 
@@ -84,9 +84,11 @@ if __name__ == "__main__":
             Ap_list = qTEBD.apply_U(A_list, U_half_list, 0)
             Ap_list = qTEBD.apply_U(Ap_list, U_list, 1)
             Ap_list = qTEBD.apply_U(Ap_list, U_half_list, 0)
+            A_list = Ap_list
         else:
             Ap_list = qTEBD.apply_U(A_list,  U_list, 0)
             Ap_list = qTEBD.apply_U(Ap_list, U_list, 1)
+            A_list = Ap_list
 
         mps_func.right_canonicalize(A_list, no_trunc=True)
         A_list, trunc_error = mps_func.left_canonicalize(A_list, no_trunc=False, chi=chi)
@@ -118,7 +120,7 @@ if __name__ == "__main__":
     Sz_array = Sz_array[:num_data, :]
     ent_array = ent_array[:num_data, :]
 
-    dir_path = 'data_tebd/1d_%s_g%.4f_h%.4f/L%d/' % (Hamiltonian, g, h, L)
+    dir_path = 'data_tebd_dt%e/1d_%s_g%.4f_h%.4f/L%d/' % (dt, Hamiltonian, g, h, L)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 

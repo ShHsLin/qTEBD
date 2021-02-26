@@ -29,7 +29,7 @@ if __name__ == "__main__":
     depth = int(sys.argv[4])
     N_iter = int(sys.argv[5])
     order = str(sys.argv[6])
-    total_t = 5.
+    total_t = 30.
     dt = 0.01
     save_each = int(0.1 // dt)
     tol = 1e-12
@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     assert order in ['1st', '2nd']
     Hamiltonian = 'TFI'
-    H_list  =  qTEBD.get_H(Hamiltonian, L, J, g, h)
+    H_list  =  qTEBD.get_H(Hamiltonian, L, J, g, h, change_basis=True)
     Sz_list = [np.array([[1, 0.], [0., -1.]]) for i in range(L)]
 
     U_list =  qTEBD.make_U(H_list, 1j * dt)
@@ -56,13 +56,26 @@ if __name__ == "__main__":
 
     ################# INITIALIZATION  ######################
     product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
+    # product_state = [np.array([0., 1.]).reshape([2, 1, 1]) for i in range(L//2)] + \
+    #         [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L//2, L)]
+
+    assert L == 5
     for dep_idx in range(depth):
+        if dep_idx == 0:
+            layer = [np.eye(4, dtype=np.complex).reshape([2, 2, 2, 2]) for i in range(L-1)]
+            X = np.array([[0., 1.], [1., 0.]], dtype=np.complex)
+            layer[0] = np.kron(X, X).reshape([2, 2, 2, 2])
+            my_circuit.append(layer)
+            current_depth = dep_idx + 1
+            continue
+
         identity_layer = [np.eye(4, dtype=np.complex).reshape([2, 2, 2, 2]) for i in range(L-1)]
         my_circuit.append(identity_layer)
         current_depth = dep_idx + 1
 
     mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
     mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
+
 
     E_list.append(np.sum(mps_func.expectation_values(mps_of_layer[-1], H_list)))
     Sz_array[0, :] = mps_func.expectation_values_1_site(mps_of_layer[-1], Sz_list)

@@ -24,7 +24,7 @@ def expm_eigh(t, h):
     return np.matmul(p *d, p_dagger)
 
 def H_expectation_value(A_list, H_list):
-    return np.real(np.sum(qTEBD.expectation_values(A_list, H_list)))
+    return np.real(np.sum(mps_func.expectation_values(A_list, H_list)))
 
 if __name__ == "__main__":
     np.random.seed(1)
@@ -52,11 +52,11 @@ if __name__ == "__main__":
     A_list = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
 
     t_list = [0]
-    E_list = [np.sum(qTEBD.expectation_values(A_list, H_list))]
+    E_list = [np.sum(mps_func.expectation_values(A_list, H_list))]
     Sz_array = np.zeros([int(total_t // dt) + 1, L], dtype=np.complex)
-    Sz_array[0, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
+    Sz_array[0, :] = mps_func.expectation_values_1_site(A_list, Sz_list)
     ent_array = np.zeros([int(total_t // dt) + 1, L-1], dtype=np.double)
-    ent_array[0, :] = qTEBD.get_entanglement(A_list)
+    ent_array[0, :] = mps_func.get_entanglement(A_list)
     update_error_list = [0.]
 
     U_list =  qTEBD.make_U(H_list, 1j * dt)
@@ -64,18 +64,18 @@ if __name__ == "__main__":
 
     exact_steps = int(np.log2(chi))
     for idx in range(exact_steps):
-        A_list, _ = qTEBD.right_canonicalize(A_list, no_trunc=True)
+        A_list, _ = mps_func.right_canonicalize(A_list, no_trunc=True)
         A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, 0, no_trunc=True)
-        A_list, _ = qTEBD.left_canonicalize(A_list, no_trunc=True)
+        A_list, _ = mps_func.left_canonicalize(A_list, no_trunc=True)
 
         ## [ToDo] here assume no truncation
         fidelity_reached = 1.
         print("fidelity reached : ", fidelity_reached)
         update_error_list.append(1. - fidelity_reached)
-        current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
+        current_energy = np.sum(mps_func.expectation_values(A_list, H_list))
         E_list.append(current_energy)
-        Sz_array[1+idx, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
-        ent_array[1+idx, :] = qTEBD.get_entanglement(A_list)
+        Sz_array[1+idx, :] = mps_func.expectation_values_1_site(A_list, Sz_list)
+        ent_array[1+idx, :] = mps_func.get_entanglement(A_list)
         t_list.append(t_list[-1]+dt)
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     for idx in range(1+exact_steps, int(total_t//dt) + 1):
         if fidelity_reached < 1. - 1e-12 and A_list[L//2].shape[1] < chi:
             ### AAAAA form
-            A_list, _ = qTEBD.right_canonicalize(A_list)
+            A_list, _ = mps_func.right_canonicalize(A_list)
             ### BBBBB form
             A_list, trunc_error = qTEBD.apply_U_all(A_list,  U_list, 0)
             ### AAAAA form
@@ -95,10 +95,10 @@ if __name__ == "__main__":
             fidelity_reached = 1.
             print("fidelity reached : ", fidelity_reached)
             update_error_list.append(1. - fidelity_reached)
-            current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
+            current_energy = np.sum(mps_func.expectation_values(A_list, H_list))
             E_list.append(current_energy)
-            Sz_array[idx, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
-            ent_array[idx, :] = qTEBD.get_entanglement(A_list)
+            Sz_array[idx, :] = mps_func.expectation_values_1_site(A_list, Sz_list)
+            ent_array[idx, :] = mps_func.get_entanglement(A_list)
             t_list.append(t_list[-1]+dt)
 
             print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
@@ -114,13 +114,13 @@ if __name__ == "__main__":
             Ap_list = qTEBD.apply_U(Ap_list, U_list, 1)
 
         # Ap_list = e^(-i dt H) | A_list >
-        # print("Norm new mps = ", qTEBD.overlap(Ap_list, Ap_list), "new state aimed E = ",
-        #       np.sum(qTEBD.expectation_values(Ap_list, H_list, check_norm=False))/qTEBD.overlap(Ap_list, Ap_list)
+        # print("Norm new mps = ", mps_func.overlap(Ap_list, Ap_list), "new state aimed E = ",
+        #       np.sum(mps_func.expectation_values(Ap_list, H_list, check_norm=False))/mps_func.overlap(Ap_list, Ap_list)
         #      )
 
         ### POLAR DECOMPOSITION UPDATE ###
-        Ap_norm_sq = qTEBD.overlap(Ap_list, Ap_list)
-        fidelity_before = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / Ap_norm_sq
+        Ap_norm_sq = mps_func.overlap(Ap_list, Ap_list)
+        fidelity_before = np.abs(mps_func.overlap(Ap_list, A_list))**2 / Ap_norm_sq
         print("fidelity before : ", fidelity_before)
 
         A_list, overlap  = qTEBD.var_A(A_list, Ap_list, 'left')
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         # else:
         #     ## Gradient opt
         #     for k in range(100):
-        #         grad_A_list = grad(qTEBD.overlap, 1)(Ap_list, A_list)
+        #         grad_A_list = grad(mps_func.overlap, 1)(Ap_list, A_list)
         #         for idx_2 in range(L):
         #             d, chi1, chi2 = A_list[idx_2].shape
         #             U = A_list[idx_2].reshape([d * chi1, chi2])
@@ -178,13 +178,13 @@ if __name__ == "__main__":
         # #     for a in range(N_iter):
         # #         A_list, overlap  = qTEBD.var_A(A_list, A_list, 'right')
 
-        fidelity_reached = np.abs(qTEBD.overlap(Ap_list, A_list))**2 / qTEBD.overlap(Ap_list, Ap_list)
+        fidelity_reached = np.abs(mps_func.overlap(Ap_list, A_list))**2 / mps_func.overlap(Ap_list, Ap_list)
         print("fidelity reached : ", fidelity_reached)
         update_error_list.append(1. - fidelity_reached)
-        current_energy = np.sum(qTEBD.expectation_values(A_list, H_list))
+        current_energy = np.sum(mps_func.expectation_values(A_list, H_list))
         E_list.append(current_energy)
-        Sz_array[idx, :] = qTEBD.expectation_values_1_site(A_list, Sz_list)
-        ent_array[idx, :] = qTEBD.get_entanglement(A_list)
+        Sz_array[idx, :] = mps_func.expectation_values_1_site(A_list, Sz_list)
+        ent_array[idx, :] = mps_func.get_entanglement(A_list)
         t_list.append(t_list[-1]+dt)
 
         print("T=", t_list[-1], " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])

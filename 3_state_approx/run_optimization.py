@@ -84,10 +84,10 @@ if __name__ == "__main__":
     mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
     mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
 
-    E_list.append(np.sum(qTEBD.expectation_values(mps_of_layer[-1], H_list)))
-    Sz_array[0, :] = qTEBD.expectation_values_1_site(mps_of_layer[-1], Sz_list)
-    ent_array[0, :] = qTEBD.get_entanglement(mps_of_last_layer)
-    fidelity_reached = np.abs(qTEBD.overlap(target_mps, mps_of_last_layer))**2
+    E_list.append(np.sum(mps_func.expectation_values(mps_of_layer[-1], H_list)))
+    Sz_array[0, :] = mps_func.expectation_values_1_site(mps_of_layer[-1], Sz_list)
+    ent_array[0, :] = mps_func.get_entanglement(mps_of_last_layer)
+    fidelity_reached = np.abs(mps_func.overlap(target_mps, mps_of_last_layer))**2
     error_list.append(1. - fidelity_reached)
 
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         print(e)
 
     stop_crit = 1e-1
-    assert np.isclose(qTEBD.overlap(target_mps, target_mps), 1.)
+    assert np.isclose(mps_func.overlap(target_mps, target_mps), 1.)
     for idx in range(running_idx, N_iter):
         #################################
         #### variational optimzation ####
@@ -122,12 +122,12 @@ if __name__ == "__main__":
         #################
         #### Measure ####
         #################
-        assert np.isclose(qTEBD.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-        current_energy = np.sum(qTEBD.expectation_values(mps_of_last_layer, H_list))
+        assert np.isclose(mps_func.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
+        current_energy = np.sum(mps_func.expectation_values(mps_of_last_layer, H_list))
         E_list.append(current_energy)
-        Sz_array[idx, :] = qTEBD.expectation_values_1_site(mps_of_last_layer, Sz_list)
-        ent_array[idx, :] = qTEBD.get_entanglement(mps_of_last_layer)
-        fidelity_reached = np.abs(qTEBD.overlap(target_mps, mps_of_last_layer))**2
+        Sz_array[idx, :] = mps_func.expectation_values_1_site(mps_of_last_layer, Sz_list)
+        ent_array[idx, :] = mps_func.get_entanglement(mps_of_last_layer)
+        fidelity_reached = np.abs(mps_func.overlap(target_mps, mps_of_last_layer))**2
 
         print("iter=", idx, " E=", E_list[-1], " Sz=", Sz_array[idx, L//2])
         print("fidelity reached : ", fidelity_reached)

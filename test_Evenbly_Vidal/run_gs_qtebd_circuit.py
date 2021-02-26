@@ -5,6 +5,7 @@ import sys
 sys.path.append('..')
 import misc, os
 import qTEBD
+import model
 import parse_args
 
 '''
@@ -35,14 +36,19 @@ if __name__ == "__main__":
         g = args.g
         h = args.h
         H_list = qTEBD.get_H(Hamiltonian, L, J, g, h)
+        H_model = model.MpoModel(L, J, g=g, h=h, Hamiltonian=Hamiltonian)
+        H_mpo = H_model.H_mpo_hor
     elif Hamiltonian == 'XXZ':
         g = delta = args.delta
         H_list = qTEBD.get_H(Hamiltonian, L, J, delta, 0)
+        H_model = model.MpoModel(L, J, delta, Hamiltonian)
+        H_mpo = H_model.H_mpo_hor
 
     depth = args.depth
     N_iter = args.N_iter
     order = args.order
 
+    save_each = 100
     assert order in ['1st', '2nd']
 
 
@@ -51,6 +57,11 @@ if __name__ == "__main__":
     t_list = [0]
     E_list = []
     update_error_list = [0.]
+
+    ### DATA_DICT
+    data_dict = {'t_list': t_list,
+                 'E_list': E_list,
+                 'update_error_list': update_error_list}
 
     for dep_idx in range(depth):
         # if dep_idx > 0:
@@ -67,21 +78,50 @@ if __name__ == "__main__":
     mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
     E_list.append(np.sum(mps_func.expectation_values(mps_of_layer[-1], H_list)))
 
-    for dt in [0.05,0.01,0.001]:
+
+    dir_path = 'data/1d_%s_g%.1f_h%.1f/L%d_depth%d/' % (Hamiltonian, g, h, L, depth)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    try:
+        my_circuit, data_dict = misc.load_circuit_simple(dir_path)
+        print("Old data found !!!")
+    except:
+        print("No data found !!!")
+        pass
+
+    running_idx = len(data_dict['E_list'])
+
+
+
+    for dt in [1.,]:
         U_list =  qTEBD.make_U(H_list, dt)
         U_half_list =  qTEBD.make_U(H_list, dt/2.)
-        for i in range(int(60//dt**(0.75))):
+        for i in range(running_idx, 1000000):
             mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
             # [TODO] remove the assertion below
             assert np.isclose(mps_func.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
-            if order == '2nd':
-                new_mps = qTEBD.apply_U(mps_of_last_layer,  U_half_list, 0)
-                new_mps = qTEBD.apply_U(new_mps, U_list, 1)
-                new_mps = qTEBD.apply_U(new_mps, U_half_list, 0)
-            else:
-                new_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
-                new_mps = qTEBD.apply_U(new_mps, U_list, 1)
+
+            ## mpo in the convention abpq
+            new_mps = [ np.einsum('plr,LRqp->qlLrR', mps_of_last_layer[j], H_mpo[j]) for j in range(L)]
+            # new_mps[-1] *= -1
+            for j in range(L):
+                dim_q, dim_l, dim_L, dim_r, dim_R = new_mps[j].shape
+                new_mps[j] = new_mps[j].reshape([dim_q, dim_l*dim_L, dim_r*dim_R])
+
+            ## Below is a sanity check
+            # print(mps_func.overlap(new_mps, mps_of_last_layer) + 30)
+
+
+
+            # if order == '2nd':
+            #     new_mps = qTEBD.apply_U(mps_of_last_layer,  U_half_list, 0)
+            #     new_mps = qTEBD.apply_U(new_mps, U_list, 1)
+            #     new_mps = qTEBD.apply_U(new_mps, U_half_list, 0)
+            # else:
+            #     new_mps = qTEBD.apply_U(mps_of_last_layer,  U_list, 0)
+            #     new_mps = qTEBD.apply_U(new_mps, U_list, 1)
 
             print("Norm new mps = ", mps_func.overlap(new_mps, new_mps), "new state aimed E = ",
                   np.sum(mps_func.expectation_values(new_mps, H_list, check_norm=False))/mps_func.overlap(new_mps, new_mps)
@@ -96,35 +136,27 @@ if __name__ == "__main__":
             mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
             assert np.isclose(mps_func.overlap(mps_of_last_layer, mps_of_last_layer), 1.)
             current_energy = np.sum(mps_func.expectation_values(mps_of_last_layer, H_list))
-            E_list.append(current_energy)
-            t_list.append(t_list[-1]+dt)
 
-            print(t_list[-1], E_list[-1])
+            data_dict['E_list'].append(current_energy)
+            data_dict['t_list'].append(data_dict['t_list'][-1]+dt)
+
+            print(data_dict['t_list'][-1], data_dict['E_list'][-1])
 
             fidelity_reached = np.abs(mps_func.overlap(new_mps, mps_of_last_layer))**2 / mps_func.overlap(new_mps, new_mps)
             print("fidelity reached : ", fidelity_reached)
-            update_error_list.append(1. - fidelity_reached)
+            data_dict['update_error_list'].append(1. - fidelity_reached)
+
+            if (i+1) % save_each == 0:
+                misc.save_circuit_simple(dir_path, my_circuit, data_dict)
+                print("data saved")
 
 
 
-    dir_path = 'data/1d_%s_g%.1f/L%d/' % (Hamiltonian, g, L)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+    misc.save_circuit_simple(dir_path, my_circuit, data_dict)
 
-    filename = 'circuit_depth%d_Niter%d_%s_energy.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(E_list))
-
-    filename = 'circuit_depth%d_Niter%d_%s_dt.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(t_list))
-
-    filename = 'circuit_depth%d_Niter%d_%s_error.npy' % (depth, N_iter, order)
-    path = dir_path + filename
-    np.save(path, np.array(update_error_list))
 
     dir_path = 'data/1d_%s_g%.1f/' % (Hamiltonian, g)
-    best_E = np.amin(E_list)
+    best_E = np.amin(data_dict['E_list'])
     filename = 'circuit_depth%d_Niter%d_%s_energy.csv' % (depth, N_iter, order)
     path = dir_path + filename
     # Try to load file 

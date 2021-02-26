@@ -3,45 +3,33 @@ import pickle
 import os, sys
 sys.path.append('..')
 import qTEBD, misc
-import parse_args
 
 '''
-    Algorithm:
-        (1.) first call circuit_2_mps to get the list of mps-reprentation of
-        circuit up to each layer.
-        (2.) Load the target state | psi >
-        (3.) var optimize layer-n by maximizing < psi | U(n) | n-1>
-        (4.) collapse layer-n optimized on |psi> getting new |psi>
-        (5.) var optimize layer-n-1 by maximizing < psi | U(n-1) | n-2 >
-        [TODO] check the index n above whether is consistent with the code.
-        ...
+This is a fix up for rerunning the optimization on tenpy mps.
+As a result, we initialize the state with the pretrain circuit
+from ../3_state_approx/data/1d_TFI_g1.4000_h%.4f/L31_chi32/T%.1f/circuit_depth5_Niter100000_1st_circuit.pkl
 '''
 
 if __name__ == "__main__":
     np.random.seed(1)
     np.set_printoptions(linewidth=2000, precision=5,threshold=4000)
-
-    args = parse_args.parse_args()
-
-    L = args.L
+    L = int(sys.argv[1])
     J = 1.
-    g = args.g
-    h = args.h
-    depth = args.depth
-    N_iter = args.N_iter
-    order = args.order  ## this is a parameter that is not used
-    T = args.T ## the target state is corresponding to time T.
+    g = float(sys.argv[2])
+    h = float(sys.argv[3])
+    depth = int(sys.argv[4])
+    N_iter = int(sys.argv[5])
+    order = str(sys.argv[6])
+    ## the target state is corresponding to time T.
+    T = float(sys.argv[7])
 
-    schedule = 'linear'
-
-    assert schedule in ['linear', 'exponential', 'best_init']
 
     save_each = 100
     tol = 1e-12
     cov_crit = tol * 0.1
     max_N_iter = N_iter
 
-    assert order in ['1st', '2nd']
+    assert order in ['1st', '2nd', '4th']
 
     Hamiltonian = 'TFI'
     H_list  =  qTEBD.get_H(Hamiltonian, L, J, g, h)
@@ -49,9 +37,13 @@ if __name__ == "__main__":
 
 
     ############### LOAD TARGET STATE ######################
-    chi = 32
+    if np.isclose(g, 1.):
+        chi = 128
+    else:
+        chi = 32
 
-    mps_dir_path = '../2_time_evolution/data_tebd/1d_%s_g%.4f_h%.4f/L%d/wf_chi%d_1st/' % (Hamiltonian, g, h, L, chi)
+    # data_tebd_dt1.000000e-03/1d_TFI_g1.4000_h0.*/L31/trunc_wf_chi32_4th/
+    mps_dir_path = './data_tebd_dt%e/1d_%s_g%.4f_h%.4f/L%d/trunc_wf_chi%d_4th/' % (1e-3, Hamiltonian, g, h, L, chi)
     filename = mps_dir_path + 'T%.1f.pkl' % T
     target_mps = pickle.load(open(filename, 'rb'))
 
@@ -73,35 +65,18 @@ if __name__ == "__main__":
 
 
     ################# INITIALIZATION  ######################
-    if schedule not in ['best_init']:
-        init_file_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/init_files/%d_layers_T%.1f.pkl' % (schedule, Hamiltonian,
-                                                                                                 g, h, L, chi, depth,
-                                                                                                 T)
-    else:
-        init_file_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/init_files/%d_layers_T%.1f.npy' % (schedule, Hamiltonian,
-                                                                                                 g, h, L, chi, depth,
-                                                                                                 T)
-
     product_state = [np.array([1., 0.]).reshape([2, 1, 1]) for i in range(L)]
+    for dep_idx in range(depth):
+        # Trotterization initization
+        my_circuit.append([t.copy() for t in U_list])
+        current_depth = dep_idx + 1
 
-    # for dep_idx in range(depth):
-    #     # Identity initialization
-    #     # my_circuit.append([np.eye(4, dtype=np.complex).reshape([2, 2, 2, 2]) for i in range(L-1)])
-    #     # Trotterization initization
-    #     my_circuit.append([t.copy() for t in U_list])
-    #     current_depth = dep_idx + 1
+    # try:
+    #     init_path = '../3_state_approx/data/1d_TFI_g%.4f_h%.4f/L31_chi32/T%.1f/circuit_depth%d_Niter100000_1st_circuit.pkl' % (g, h, T, depth)
+    #     my_circuit = pickle.load(open(init_path, 'rb'))
 
-    if schedule not in ['best_init']:
-        my_circuit = pickle.load(open(init_file_path, 'rb'))
-    else:
-        my_circuit = np.load(init_file_path)
-
-    for layer in my_circuit:
-        for idx, U in enumerate(layer):
-            # layer[idx] = U.reshape([4, 4]).T.conj().reshape([2, 2, 2, 2])
-            pass
-
-    current_depth = depth
+    # except:
+    #     pass
 
     mps_of_layer = qTEBD.circuit_2_mps(my_circuit, product_state)
     mps_of_last_layer = [A.copy() for A in mps_of_layer[current_depth]]
@@ -111,10 +86,9 @@ if __name__ == "__main__":
     ent_array[0, :] = mps_func.get_entanglement(mps_of_last_layer)
     fidelity_reached = np.abs(mps_func.overlap(target_mps, mps_of_last_layer))**2
     error_list.append(1. - fidelity_reached)
-    print(" initialized fidelity : ", fidelity_reached)
 
 
-    dir_path = 'data_%s/1d_%s_g%.4f_h%.4f/L%d_chi%d/T%.1f/' % (schedule, Hamiltonian, g, h, L, chi, T)
+    dir_path = 'data/1d_%s_g%.4f_h%.4f/L%d_chi%d/T%.1f/' % (Hamiltonian, g, h, L, chi, T)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
@@ -140,8 +114,12 @@ if __name__ == "__main__":
         #################################
         #### variational optimzation ####
         #################################
-        mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
-                                                          my_circuit, product_state)
+
+        try:
+            mps_of_last_layer, my_circuit = qTEBD.var_circuit(target_mps, mps_of_last_layer,
+                                                              my_circuit, product_state)
+        except:
+            mps_of_last_layer, my_circuit = qTEBD.var_circuit2(target_mps, product_state, my_circuit)
         #################
         #### Measure ####
         #################
