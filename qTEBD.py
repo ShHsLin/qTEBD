@@ -143,11 +143,14 @@ def polar(A):
 
 def random_2site_U(d, factor=1e-2):
     try:
-        A = np.random.uniform(size=[d**2, d**2]) * factor
-    except:
-        A = onp.random.uniform(size=[d**2, d**2]) * factor
+        A = factor * (np.random.uniform(size=[d**2, d**2]) +
+                      1j * np.random.uniform(size=[d**2, d**2]))
 
-    A = A-A.T
+    except:
+        A = factor * (onp.random.uniform(size=[d**2, d**2]) +
+                      1j * onp.random.uniform(size=[d**2, d**2]))
+
+    A = A-A.T.conj()
     U = (np.eye(d**2)-A).dot(np.linalg.inv(np.eye(d**2)+A))
     return U.reshape([d] * 4)
     # M = onp.random.rand(d ** 2, d ** 2)

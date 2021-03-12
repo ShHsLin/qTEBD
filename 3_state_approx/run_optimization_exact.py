@@ -96,12 +96,12 @@ if __name__ == "__main__":
     Sz_array[0, :] = mps_func.expectation_values_1_site(mps_of_layer[-1], Sz_list)
     ent_array[0, :] = mps_func.get_entanglement(mps_of_last_layer)
     '''
-    fidelity_reached = np.abs(mps_func.overlap_exact(target_state, iter_state))**2
+    fidelity_reached = np.abs(qTEBD.overlap_exact(target_state, iter_state))**2
     error_list.append(1. - fidelity_reached)
 
 
     stop_crit = 1e-1
-    assert np.isclose(mps_func.overlap_exact(target_state, target_state), 1.)
+    assert np.isclose(qTEBD.overlap_exact(target_state, target_state), 1.)
     for idx in range(0, N_iter):
         #################################
         #### variational optimzation ####
@@ -114,12 +114,12 @@ if __name__ == "__main__":
         #################
         #### Measure ####
         #################
-        assert np.isclose(mps_func.overlap_exact(iter_state, iter_state), 1.)
+        assert np.isclose(qTEBD.overlap_exact(iter_state, iter_state), 1.)
         '''
         Sz_array[idx, :] = mps_func.expectation_values_1_site(mps_of_last_layer, Sz_list)
         ent_array[idx, :] = mps_func.get_entanglement(mps_of_last_layer)
         '''
-        fidelity_reached = np.abs(mps_func.overlap_exact(target_state, iter_state))**2
+        fidelity_reached = np.abs(qTEBD.overlap_exact(target_state, iter_state))**2
 
         print("fidelity reached : ", fidelity_reached)
         error_list.append(1. - fidelity_reached)
